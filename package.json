@@ -1,0 +1,13 @@
+{
+  "name": "maison-kage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Prototipo de baja fidelidad Maison Kage",
+  "scripts": {
+    "dev": "vite --host --port 5173",
+    "start": "vite --host --port 5173"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}
