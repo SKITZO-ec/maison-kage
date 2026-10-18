@@ -1,8 +1,7 @@
 /* MAISON KAGE · Iniciar sesión
    Prototipo: cualquier correo y contraseña sirven, solo deben estar llenos */
-const nextRaw = params.get('next') || '';
-const nextPage = /^[a-z0-9-]+\.html$/.test(nextRaw) ? nextRaw : 'perfil.html';
-if(nextRaw) $('#lg-reg').href = 'registro.html?next=' + encodeURIComponent(nextPage);
+const nextPage = safeNext(params.get('next'));
+if(params.get('next')) $('#lg-reg').href = 'registro.html?next=' + encodeURIComponent(nextPage);
 
 $('#lg-form').addEventListener('submit', e => {
   e.preventDefault();

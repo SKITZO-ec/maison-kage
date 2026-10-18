@@ -3,7 +3,12 @@
    y "Deuna" por un QR dinámico de un agregador (por ejemplo Pagomedios). */
 const nextOrderNum = () => 'MK-' + String(1000 + state.orderSeq);
 
+/* Para pagar hace falta una cuenta. El carrito se queda guardado mientras tanto */
 if(!state.cart.length) $('#app').innerHTML = emptyCartHTML();
+else if(!currentUser()){
+  flash('Inicia sesión o crea una cuenta para terminar tu compra. Tu carrito está guardado.');
+  location.replace('login.html?next=checkout.html');
+}
 else renderCheckout();
 
 function renderCheckout(){
@@ -15,7 +20,7 @@ function renderCheckout(){
       <li class="${TW.step}" aria-current="step"><span class="${TW.dot}">2</span>Entrega y pago</li>
       <li class="${TW.step}"><span class="${TW.dot}">3</span>Confirmación</li>
     </ol>
-    <header class="${TW.pageHead}"><h1 class="${TW.pageTitle}">Checkout</h1><p class="${TW.pageHeadP}">${u ? 'Completamos lo que ya tenemos de tu cuenta. Puedes cambiarlo aquí mismo.' : '<a class="underline" href="login.html?next=checkout.html">Inicia sesión</a> para usar tus datos guardados, o compra como invitado.'}</p></header>
+    <header class="${TW.pageHead}"><h1 class="${TW.pageTitle}">Checkout</h1><p class="${TW.pageHeadP}">Completamos lo que ya tenemos de tu cuenta. Puedes cambiarlo aquí mismo.</p></header>
     <div class="${TW.coGrid}">
       <form id="co-form" novalidate>
         <div class="${TW.errSummary}" id="co-errors" tabindex="-1" role="alert" hidden></div>

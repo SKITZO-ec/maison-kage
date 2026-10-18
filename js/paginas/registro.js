@@ -1,6 +1,6 @@
 /* MAISON KAGE · Crear cuenta */
-const nextRaw = params.get('next') || '';
-const nextPage = /^[a-z0-9-]+\.html$/.test(nextRaw) ? nextRaw : 'perfil.html';
+const nextPage = safeNext(params.get('next'));
+if(params.get('next')) $('#rg-login').href = 'login.html?next=' + encodeURIComponent(nextPage);
 if(params.get('email')) $('#rg-email').value = params.get('email');
 
 $('#rg-form').addEventListener('submit', e => {

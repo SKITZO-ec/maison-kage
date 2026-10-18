@@ -318,6 +318,55 @@ function renderAccUser(){
   const box = $('#acc-user'), u = currentUser();
   if(box && u) box.innerHTML = `<strong class="${TW.accUserName}">${esc(u.nombre)} ${esc(u.apellido)}</strong><span class="${TW.accUserMail}">${esc(u.email)}</span>`;
 }
+/* Destino seguro después de iniciar sesión. Solo acepta páginas del sitio, con o sin parámetros */
+function safeNext(raw, fallback='perfil.html'){
+  return /^[a-z0-9-]+\.html(\?[a-z0-9=&%._-]*)?$/i.test(raw || '') ? raw : fallback;
+}
+const aquiMismo = () => PAGE + location.search;
+
+/* ---------- Aviso del corazón sin sesión ----------
+   Pequeño, junto al corazón y sin bloquear la pantalla.
+   Si la persona entra a su cuenta desde el aviso, el favorito se guarda al volver */
+const FAV_PEND = 'mk-fav-pendiente';
+let avisoFav = null;
+function abrirAvisoFavorito(btn){
+  cerrarAvisoFavorito(false);
+  const next = encodeURIComponent(aquiMismo());
+  const el = document.createElement('div');
+  el.className = TW.favPop; el.id = 'aviso-fav';
+  el.setAttribute('role','dialog'); el.setAttribute('aria-modal','false'); el.setAttribute('aria-labelledby','aviso-fav-t');
+  el.innerHTML = `<p class="${TW.favPopText}" id="aviso-fav-t">Para guardar tus favoritos crea una cuenta. Si ya tienes una, inicia sesión.</p>
+    <div class="${TW.favPopBtns}"><a class="${TW.btnGold}" href="registro.html?next=${next}" data-fav-ir>Crear cuenta</a><a class="${TW.btnOutline}" href="login.html?next=${next}" data-fav-ir>Iniciar sesión</a></div>
+    <button type="button" class="${TW.favPopX}" data-fav-cerrar aria-label="Cerrar aviso">×</button>`;
+  document.body.appendChild(el);
+  const r = btn.getBoundingClientRect(), w = el.offsetWidth;
+  el.style.left = Math.max(16, Math.min(r.right - w, innerWidth - 16 - w)) + scrollX + 'px';
+  el.style.top = r.bottom + 8 + scrollY + 'px';
+  avisoFav = {el, btn, id: btn.dataset.id};
+  el.querySelectorAll('[data-fav-ir]').forEach(a => a.addEventListener('click', () => { try{ sessionStorage.setItem(FAV_PEND, avisoFav.id); }catch(e){} }));
+  el.querySelector('[data-fav-cerrar]').onclick = () => cerrarAvisoFavorito();
+  el.addEventListener('keydown', e => { if(e.key==='Escape'){ e.stopPropagation(); cerrarAvisoFavorito(); } });
+  el.addEventListener('focusout', e => { if(avisoFav && !el.contains(e.relatedTarget) && e.relatedTarget) cerrarAvisoFavorito(false); });
+  el.querySelector('a').focus();
+}
+function cerrarAvisoFavorito(devolverFoco=true){
+  if(!avisoFav) return;
+  const {el, btn} = avisoFav; avisoFav = null; el.remove();
+  if(devolverFoco && document.contains(btn)) btn.focus();
+}
+document.addEventListener('click', e => {
+  if(avisoFav && !avisoFav.el.contains(e.target) && !avisoFav.btn.contains(e.target)) cerrarAvisoFavorito(false);
+});
+/* Si había un favorito esperando, se guarda apenas hay sesión */
+function aplicarFavoritoPendiente(){
+  let id = null;
+  try{ id = sessionStorage.getItem(FAV_PEND); sessionStorage.removeItem(FAV_PEND); }catch(e){}
+  const p = id && byId(id);
+  if(!p || !currentUser() || isFav(id)) return;
+  state.favs = [...state.favs, id]; save();
+  toast(`${p.nombre} se guardó en tus favoritos.`, {link:['Ver favoritos','favoritos.html']});
+}
+
 /* Las páginas de Mi cuenta piden sesión iniciada */
 function requireLogin(){
   if(currentUser()) return true;
@@ -426,6 +475,7 @@ document.addEventListener('click', async e => {
   if(a==='back'){ history.length>1 ? history.back() : (location.href='index.html'); return; }
   if(a==='focus-field'){ document.getElementById(t.dataset.target)?.focus(); return; }
   if(a==='fav'){
+    if(!currentUser()){ abrirAvisoFavorito(t); return; }
     const id = t.dataset.id, p = byId(id), on = !isFav(id);
     state.favs = on ? [...state.favs, id] : state.favs.filter(x => x!==id);
     save();
@@ -464,3 +514,4 @@ renderAccUser();
 updateCartBadge();
 markNav();
 showFlash();
+if(currentUser()) aplicarFavoritoPendiente();

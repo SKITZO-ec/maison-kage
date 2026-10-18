@@ -24,7 +24,7 @@ for (const url of ['catalogo.html?decant=1', 'catalogo.html?familia=gourmand&ori
 
 test('checkout con carrito carga sin errores', async ({ page }) => {
   await page.goto('index.html');
-  await page.evaluate(() => { addToCart('khamrah','frasco',50,1,true); addToCart('khamrah','decant',5,2,true); });
+  await page.evaluate(() => { state.accounts['a@b.com'] = newAccount('Ana','Ruiz','a@b.com'); state.user = 'a@b.com'; addToCart('khamrah','frasco',50,1,true); addToCart('khamrah','decant',5,2,true); });
   await page.goto('checkout.html');
   await expect(page.locator('#co-form')).toBeVisible();
   expect(page.erroresConsola).toEqual([]);
