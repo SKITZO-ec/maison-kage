@@ -2,12 +2,15 @@
   "name": "maison-kage",
   "version": "1.0.0",
   "private": true,
-  "description": "Prototipo de baja fidelidad Maison Kage",
+  "description": "Prototipo de alta fidelidad Maison Kage",
   "scripts": {
     "dev": "vite --host --port 5173",
-    "start": "vite --host --port 5173"
+    "start": "vite --host --port 5173",
+    "test": "tailwindcss -c tests/soporte/tailwind.cjs -o tests/.tw.css --minify && playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "tailwindcss": "^3.4.17",
     "vite": "^6.3.5"
   }
 }
