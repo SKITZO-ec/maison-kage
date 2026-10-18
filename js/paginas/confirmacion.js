@@ -1,7 +1,7 @@
 /* MAISON KAGE · Confirmación del pedido */
 const o = state.lastOrder;
 if(!o){
-  $('#app').innerHTML = `<div class="${TW.empty}"><div class="${TW.emptyIcon}">${ICON.box}</div><h1 class="${TW.emptyTitle}">No hay un pedido reciente</h1><p class="${TW.emptyP}">Cuando confirmes un pago verás aquí el resumen de tu pedido.</p><div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Ir al catálogo</a></div></div>`;
+  $('#app').innerHTML = `<div class="${TW.empty}"><div class="${TW.emptyIcon}">${ICON.box}</div><h1 class="${TW.emptyTitle}">No hay un pedido reciente</h1><p class="${TW.emptyP}">Cuando confirmes un pago verás aquí el resumen de tu pedido.</p><div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Ver los perfumes</a></div></div>`;
 } else {
   const verif = o.estado === 'Pago en verificación';
   const nombre = esc(o.envio.nombre.split(' ')[0]);

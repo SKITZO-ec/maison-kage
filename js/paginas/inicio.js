@@ -1,7 +1,8 @@
-/* MAISON KAGE · Inicio: ofertas de la semana y perfumes en tendencia */
-const offers = PRODUCTS.filter(p => p.oferta).slice(0,4);
-const offerIds = new Set(offers.map(p => p.id));
-const trends = PRODUCTS.filter(p => p.top && !offerIds.has(p.id)).slice(0,4);
+/* MAISON KAGE · Inicio con ofertas, novedades y más vendidos
+   Un perfume no se repite entre secciones */
+const usados = new Set();
+const tomar = filtro => { const l = PRODUCTS.filter(p => filtro(p) && !usados.has(p.id)).slice(0,4); l.forEach(p => usados.add(p.id)); return l; };
 
-$('#home-ofertas').innerHTML = offers.map(card).join('');
-$('#home-tend').innerHTML = trends.map(card).join('');
+$('#home-ofertas').innerHTML = tomar(p => p.oferta>0).map(p => card(p)).join('');
+$('#home-novedades').innerHTML = tomar(p => p.novedad).map(p => card(p)).join('');
+$('#home-top').innerHTML = tomar(p => p.top).map(p => card(p)).join('');

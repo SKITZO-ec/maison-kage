@@ -158,8 +158,8 @@ function emptyCartHTML(h='h1'){
   return `<div class="${TW.empty}">
     <div class="${TW.emptyIcon}">${ICON.bag}</div>
     <${h} class="${TW.emptyTitle}">Tu carrito está vacío</${h}>
-    <p class="${TW.emptyP}">Todavía no agregas perfumes. Explora el catálogo o empieza con un decant de 2 ml para conocer una fragancia sin gastar en el frasco.</p>
-    <div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Explorar el catálogo</a><a class="${TW.btnOutline}" href="catalogo.html?decant=1">Ver decants</a></div>
+    <p class="${TW.emptyP}">Todavía no agregas perfumes. Explora los perfumes o empieza con un decant de 2 ml para conocer una fragancia sin gastar en el frasco.</p>
+    <div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Explorar los perfumes</a><a class="${TW.btnOutline}" href="catalogo.html?decant=1">Ver decants</a></div>
   </div>`;
 }
 function summaryRows(t){
@@ -403,9 +403,10 @@ function checkFilled(form, summaryId){
 function markNav(){
   const here = PAGE + location.search;
   $$('#dd-menu a, #mega a, #dd-account a').forEach(a => a.getAttribute('href')===here ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'));
-  const cat = $('[data-nav="catalogo"]');
-  if(PAGE==='catalogo.html' && !location.search) cat.setAttribute('aria-current','page');
-  if($$('#mega a').some(a => a.getAttribute('href')===here)) $('#btn-perfumes').setAttribute('aria-current','true');
+  /* Perfumes queda marcado en cualquier listado de perfumes */
+  if(PAGE==='catalogo.html') $('#btn-perfumes').setAttribute('aria-current','true');
+  /* En el menú compacto se abre el grupo de la categoría actual */
+  $$('#dd-menu details').forEach(d => { if(d.querySelector('[aria-current]')) d.open = true; });
   if(PAGE==='carrito.html') $('#cart-link').setAttribute('aria-current','page');
 }
 
