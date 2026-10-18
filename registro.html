@@ -98,6 +98,12 @@
       <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-rg-email" hidden></p>
     </div>
         <div class="flex flex-col gap-[6px] mb-[18px]">
+      <label class="font-sans font-bold text-[14px] leading-[normal]" for="rg-tel">Celular <span class="text-red" aria-hidden="true">*</span></label>
+      <p class="text-[13px]" id="rg-tel-help">10 dígitos, por ejemplo 0991234567</p>
+      <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="rg-tel" name="rg-tel" type="tel" autocomplete="tel" inputmode="numeric" maxlength="10" data-digits="10" aria-required="true" aria-describedby="rg-tel-help err-rg-tel">
+      <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-rg-tel" hidden></p>
+    </div>
+        <div class="flex flex-col gap-[6px] mb-[18px]">
       <label class="font-sans font-bold text-[14px] leading-[normal]" for="rg-pass">Contraseña <span class="text-red" aria-hidden="true">*</span></label>
       <p class="text-[13px]" id="rg-pass-help">Mínimo 8 caracteres</p>
       <div class="flex"><input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red flex-1" id="rg-pass" name="rg-pass" type="password" autocomplete="new-password" aria-required="true" aria-describedby="rg-pass-help err-rg-pass" data-rule="pass">

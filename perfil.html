@@ -94,6 +94,7 @@
       <div id="acc-content">
         <h1 class="font-serif uppercase font-semibold tracking-[.12em] leading-[1.15] movil:tracking-[.08em] text-[38px] tablet:text-[32px] movil:text-[26px] focus:outline-none" tabindex="-1">Mi perfil</h1>
         <form id="pf-form" class="max-w-[640px] mt-6" novalidate>
+          <h2 class="font-serif uppercase font-semibold text-[22px] tracking-[.12em] mb-5">Datos personales</h2>
           <div class="border-2 border-red py-4 px-[18px] mb-[22px] bg-ivory" id="pf-errors" tabindex="-1" role="alert" hidden></div>
           <div class="grid grid-cols-2 gap-x-5 movil:grid-cols-1"><div class="flex flex-col gap-[6px] mb-[18px]">
       <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-nombre">Nombre <span class="text-red" aria-hidden="true">*</span></label>
@@ -109,9 +110,16 @@
       <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-email" name="pf-email" type="email" autocomplete="email" aria-required="true" aria-describedby="err-pf-email">
       <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-email" hidden></p>
     </div>
+          <div class="flex flex-col gap-[6px] mb-[18px]" id="pf-pass-box" hidden>
+      <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-pass">Contraseña actual <span class="text-red" aria-hidden="true">*</span></label>
+      <p class="text-[13px]" id="pf-pass-help">Para cambiar el correo confirma que eres tú</p>
+      <div class="flex"><input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red flex-1" id="pf-pass" name="pf-pass" type="password" autocomplete="current-password" aria-describedby="pf-pass-help err-pf-pass">
+      <button class="border-0 border-b-2 border-navy bg-navy text-ivory px-[14px] font-sans font-bold text-[12px] leading-[normal] tracking-[.08em] uppercase cursor-pointer hover:bg-gold hover:text-navy" type="button" data-action="toggle-pass" data-target="pf-pass" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button></div>
+      <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-pass" hidden></p>
+    </div>
           <div class="grid grid-cols-2 gap-x-5 movil:grid-cols-1"><div class="flex flex-col gap-[6px] mb-[18px]">
       <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-tel">Celular <span class="text-red" aria-hidden="true">*</span></label>
-      <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-tel" name="pf-tel" type="tel" autocomplete="tel" aria-required="true" aria-describedby="err-pf-tel">
+      <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-tel" name="pf-tel" type="tel" inputmode="numeric" maxlength="10" data-digits="10" autocomplete="tel" aria-required="true" aria-describedby="err-pf-tel">
       <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-tel" hidden></p>
     </div><div class="flex flex-col gap-[6px] mb-[18px]">
       <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-nac">Fecha de nacimiento <span class="font-normal">(opcional)</span></label>
@@ -119,6 +127,31 @@
       <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-nac" hidden></p>
     </div></div>
           <button type="submit" class="inline-flex items-center justify-center gap-2 min-h-[46px] px-[22px] font-sans font-bold text-[13px] leading-[normal] tracking-[.1em] uppercase no-underline cursor-pointer border border-solid disabled:bg-smoke disabled:text-navy disabled:border-smoke disabled:cursor-not-allowed disabled:line-through bg-gold text-navy border-gold hover:bg-navy hover:text-ivory hover:border-navy">Guardar cambios</button>
+        </form>
+        <form id="pw-form" class="max-w-[640px] mt-10 pt-8 border-t border-smoke" novalidate>
+          <h2 class="font-serif uppercase font-semibold text-[22px] tracking-[.12em] mb-2">Cambiar contraseña</h2>
+          <p class="text-[14px] mb-5">Usa al menos 8 caracteres. Puedes pegarla desde tu gestor de contraseñas.</p>
+          <div class="border-2 border-red py-4 px-[18px] mb-[22px] bg-ivory" id="pw-errors" tabindex="-1" role="alert" hidden></div>
+          <div class="flex flex-col gap-[6px] mb-[18px]">
+      <label class="font-sans font-bold text-[14px] leading-[normal]" for="pw-actual">Contraseña actual <span class="text-red" aria-hidden="true">*</span></label>
+      <div class="flex"><input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red flex-1" id="pw-actual" name="pw-actual" type="password" autocomplete="current-password" aria-required="true" aria-describedby="err-pw-actual">
+      <button class="border-0 border-b-2 border-navy bg-navy text-ivory px-[14px] font-sans font-bold text-[12px] leading-[normal] tracking-[.08em] uppercase cursor-pointer hover:bg-gold hover:text-navy" type="button" data-action="toggle-pass" data-target="pw-actual" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button></div>
+      <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pw-actual" hidden></p>
+    </div>
+          <div class="flex flex-col gap-[6px] mb-[18px]">
+      <label class="font-sans font-bold text-[14px] leading-[normal]" for="pw-nueva">Contraseña nueva <span class="text-red" aria-hidden="true">*</span></label>
+      <p class="text-[13px]" id="pw-nueva-help">Mínimo 8 caracteres</p>
+      <div class="flex"><input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red flex-1" id="pw-nueva" name="pw-nueva" type="password" autocomplete="new-password" aria-required="true" aria-describedby="pw-nueva-help err-pw-nueva" data-rule="pass">
+      <button class="border-0 border-b-2 border-navy bg-navy text-ivory px-[14px] font-sans font-bold text-[12px] leading-[normal] tracking-[.08em] uppercase cursor-pointer hover:bg-gold hover:text-navy" type="button" data-action="toggle-pass" data-target="pw-nueva" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button></div>
+      <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pw-nueva" hidden></p>
+    </div>
+          <div class="flex flex-col gap-[6px] mb-[18px]">
+      <label class="font-sans font-bold text-[14px] leading-[normal]" for="pw-nueva2">Repite la contraseña nueva <span class="text-red" aria-hidden="true">*</span></label>
+      <div class="flex"><input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red flex-1" id="pw-nueva2" name="pw-nueva2" type="password" autocomplete="new-password" aria-required="true" aria-describedby="err-pw-nueva2" data-match="pw-nueva">
+      <button class="border-0 border-b-2 border-navy bg-navy text-ivory px-[14px] font-sans font-bold text-[12px] leading-[normal] tracking-[.08em] uppercase cursor-pointer hover:bg-gold hover:text-navy" type="button" data-action="toggle-pass" data-target="pw-nueva2" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button></div>
+      <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pw-nueva2" hidden></p>
+    </div>
+          <button type="submit" class="inline-flex items-center justify-center gap-2 min-h-[46px] px-[22px] font-sans font-bold text-[13px] leading-[normal] tracking-[.1em] uppercase no-underline cursor-pointer border border-solid bg-ivory text-navy border-navy hover:bg-navy hover:text-ivory">Cambiar contraseña</button>
         </form>
         <div class="border border-smoke py-[18px] px-5 mt-7 flex justify-between items-center gap-4 movil:flex-col movil:items-start"><div><strong>¿Necesitas ayuda con tu cuenta o un pedido?</strong><p class="text-[14px]">Nuestro equipo responde por WhatsApp de lunes a sábado.</p></div><a class="inline-flex items-center justify-center gap-2 min-h-[46px] px-[22px] font-sans font-bold text-[13px] leading-[normal] tracking-[.1em] uppercase no-underline cursor-pointer border border-solid disabled:bg-smoke disabled:text-navy disabled:border-smoke disabled:cursor-not-allowed disabled:line-through bg-ivory text-navy border-navy hover:bg-navy hover:text-ivory" href="ayuda.html">Ir a soporte</a></div>
       </div>

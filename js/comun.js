@@ -376,6 +376,8 @@ function requireLogin(){
 
 /* ---------- Formularios: solo se revisa que los campos estén llenos ---------- */
 function field({id, label, type='text', value='', help='', auto='', req=true, attrs='', tight=false}){
+  /* Todo celular acepta solo 10 dígitos */
+  if(type==='tel') attrs = `inputmode="numeric" maxlength="10" data-digits="10" ${attrs}`;
   const desc = [help ? id+'-help' : '', 'err-'+id].filter(Boolean).join(' ');
   return `<div class="${tight ? TW.fieldTight : TW.field}">
     <label class="${TW.label}" for="${id}">${label}${req?` <span class="${TW.req}" aria-hidden="true">*</span>`:` <span class="${TW.optTag}">(opcional)</span>`}</label>
@@ -439,6 +441,46 @@ function checkFilled(form, summaryId){
   }
   return !errs.length;
 }
+/* ---------- Límites de los campos ----------
+   data-digits="N" deja solo N dígitos y data-card agrupa la tarjeta de 4 en 4 sin pasar de 16.
+   Se aplica al escribir y al pegar, antes que cualquier otra revisión del campo */
+const soloDigitos = (v, max) => String(v ?? '').replace(/\D/g,'').slice(0, max);
+const formatCard = v => soloDigitos(v, 16).replace(/(\d{4})(?=\d)/g, '$1 ');
+const limitar = (el, v) => el.dataset.card !== undefined ? formatCard(v) : soloDigitos(v, +el.dataset.digits);
+document.addEventListener('input', e => {
+  const el = e.target;
+  if(!el.matches?.('[data-digits], [data-card]')) return;
+  const nuevo = limitar(el, el.value);
+  if(nuevo !== el.value) el.value = nuevo;
+}, true);
+document.addEventListener('paste', e => {
+  const el = e.target;
+  if(!el.matches?.('[data-digits], [data-card]')) return;
+  e.preventDefault();
+  const txt = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+  const a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? el.value.length;
+  el.value = limitar(el, el.value.slice(0,a) + txt + el.value.slice(b));
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+}, true);
+
+/* Marca un campo con su mensaje de error y le pasa el foco */
+function marcarError(id, msg){
+  const el = document.getElementById(id), err = document.getElementById('err-'+id);
+  el.setAttribute('aria-invalid','true');
+  if(err){ err.textContent = msg; err.hidden = false; }
+  el.focus();
+}
+
+/* Hash de la contraseña en el navegador. Es provisional, en la Fase 2 la revisa el servidor con bcrypt.
+   Si el navegador no tiene crypto.subtle se devuelve null y no se revisa */
+async function hashPass(pass){
+  if(!window.crypto?.subtle) return null;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('mk|' + pass));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+/* Revisa una contraseña contra la cuenta. Una cuenta sin hash guardado la acepta */
+async function passOk(u, pass){ return !u.passHash || u.passHash === await hashPass(pass); }
+
 /* Al corregir un campo marcado con error, el error se quita apenas el dato es válido */
 ['input','change'].forEach(ev => document.addEventListener(ev, e => {
   const el = e.target;

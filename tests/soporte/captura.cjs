@@ -12,7 +12,7 @@ const { spawn } = require('child_process');
     body: "window.tailwind={};document.head.insertAdjacentHTML('beforeend','<link rel=\"stylesheet\" href=\"/tests/.tw.css\">');" }));
   await page.goto('http://localhost:4174/' + url);
   if (accion) await page.evaluate(accion);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(300); await page.waitForLoadState("load");
   await page.screenshot({ path: archivo, fullPage: !accion });
   await b.close(); srv.kill();
 })();

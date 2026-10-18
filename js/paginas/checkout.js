@@ -104,7 +104,7 @@ function payCard(data){
       <p id="modal-desc" class="${TW.gwOrder}">Pedido <strong>${num}</strong> · Total <strong>${money(t.total)}</strong></p>
       <form id="card-form" class="${TW.gwForm}" novalidate>
         <div class="${TW.errSummary}" id="card-errors" tabindex="-1" role="alert" hidden></div>
-        ${field({id:'cd-num', label:'Número de tarjeta', auto:'cc-number', attrs:'inputmode="numeric" maxlength="19" data-rule="card"', tight:true})}
+        ${field({id:'cd-num', label:'Número de tarjeta', auto:'cc-number', attrs:'inputmode="numeric" maxlength="19" data-card data-rule="card"', tight:true})}
         ${field({id:'cd-name', label:'Nombre del titular', auto:'cc-name', tight:true})}
         <div class="${TW.twoKeep}">
           ${field({id:'cd-exp', label:'Vencimiento', help:'MM/AA', auto:'cc-exp', attrs:'maxlength="5" data-rule="exp"', tight:true})}
