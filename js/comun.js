@@ -167,6 +167,7 @@ function summaryRows(t){
   return `<div class="${TW.srow}"><span>Subtotal</span><span>${money(t.sub)}</span></div>
     <div class="${TW.srow}"><span>${t.entrega==='retiro'?'Retiro en el local':'Envío a domicilio'}</span><span>${t.ship===0?'Gratis':money(t.ship)}</span></div>
     ${t.ship>0?`<p class="${TW.shipHint}">Te faltan ${money(FREE_SHIP-t.sub)} para el envío gratis, o retira gratis en nuestro local en Quito.</p>`:''}
+    ${t.entrega==='envio' && t.sub>=FREE_SHIP?`<p class="${TW.shipHint}">Tu envío es gratis porque tu compra llega a ${money(FREE_SHIP)}. Recuerda que el envío gratis aplica solo en compras desde ${money(FREE_SHIP)}.</p>`:''}
     <div class="${TW.srowTotal}"><span>Total</span><span>${money(t.total)}</span></div>`;
 }
 
@@ -192,20 +193,24 @@ function entregaHTML(o){
         <button type="button" class="${TW.btnOutline}" data-action="copy-guia" data-guia="${o.guia}" aria-label="Copiar número de guía ${fmtGuia(o.guia)}">${ICON.copy} Copiar</button>
         <a class="${TW.btnNavy}" href="${RASTREO_URL}" target="_blank" rel="noopener">Rastrear en Servientrega ${ICON.ext}<span class="sr-only"> (se abre en otra pestaña)</span></a>
       </div>
-      <p class="${TW.small}">Copia la guía y pégala en la página de Servientrega. El rastreo se activa cuando el pedido sale de nuestro local, normalmente el mismo día.</p>
+      <p class="${TW.small} font-semibold mt-3">Para saber dónde está tu pedido</p>
+      <ol class="list-decimal ml-5 grid gap-1 text-[14px]"><li>Copia tu número de guía con el botón Copiar.</li><li>Abre la página de rastreo de Servientrega.</li><li>Pega el número y consulta dónde está tu pedido.</li></ol>
+      <p class="${TW.small} mt-2">El rastreo se activa cuando el pedido sale de nuestro local, normalmente el mismo día.</p>
     </div>`;
 }
 
 /* ---------- Avisos (toast) ---------- */
-function toast(msg, {type='ok', link}={}){
+function toast(msg, {type='ok', link, action}={}){
   const r = $('#toast-region');
   r.setAttribute('aria-live', type==='error' ? 'assertive' : 'polite');
   const el = document.createElement('div');
   el.className = type==='error' ? TW.toastError : TW.toast;
-  el.innerHTML = `<p class="${TW.toastText}">${esc(msg)}</p>${link?`<a class="${TW.toastLink}" href="${link[1]}">${link[0]}</a>`:''}<button type="button" class="${TW.toastX}" data-toast-close aria-label="Cerrar aviso">×</button>`;
+  el.innerHTML = `<p class="${TW.toastText}">${esc(msg)}</p>${link?`<a class="${TW.toastLink}" href="${link[1]}">${link[0]}</a>`:''}${action?`<button type="button" class="${TW.toastAction}" data-toast-action>${esc(action[0])}</button>`:''}<button type="button" class="${TW.toastX}" data-toast-close aria-label="Cerrar aviso">×</button>`;
   r.innerHTML = ''; r.appendChild(el);
   el.querySelector('[data-toast-close]').onclick = () => el.remove();
-  clearTimeout(toast.t); toast.t = setTimeout(()=>el.remove(), 5500);
+  /* Con una acción, por ejemplo Deshacer, el aviso dura más para dar tiempo de usarla */
+  if(action) el.querySelector('[data-toast-action]').onclick = () => { el.remove(); action[1](); };
+  clearTimeout(toast.t); toast.t = setTimeout(()=>el.remove(), action ? 8000 : 5500);
 }
 /* Aviso que se muestra en la siguiente página, después de redirigir */
 function flash(msg, opts={}){ try{ sessionStorage.setItem('mk-aviso', JSON.stringify({msg, opts})); }catch(e){} }

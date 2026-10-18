@@ -44,14 +44,17 @@ document.addEventListener('click', async e => {
     const again = $(`[data-action=cart-qty][data-key="${t.dataset.key}"][data-d="${t.dataset.d}"]`);
     (again && !again.disabled ? again : $(`[data-action=cart-qty][data-key="${t.dataset.key}"]:not([disabled])`))?.focus();
   }
+  /* Quitar es inmediato y se puede deshacer desde el aviso, sin pedir confirmación */
   if(t.dataset.action==='cart-remove'){
-    const l = state.cart.find(x => lineKey(x)===t.dataset.key), p = byId(l.id);
-    if(await confirmDialog('¿Quitar del carrito?', `Se quitará ${p.nombre} ${l.kind==='decant'?'decant ':''}${l.ml} ml de tu carrito. Puedes volver a agregarlo cuando quieras.`, 'Sí, quitar')){
-      state.cart = state.cart.filter(x => x!==l);
+    const i = state.cart.findIndex(x => lineKey(x)===t.dataset.key), l = state.cart[i], p = byId(l.id);
+    state.cart.splice(i, 1);
+    save(); updateCartBadge(); renderCart();
+    $('#app h1')?.focus();
+    toast(`${p.nombre} se quitó del carrito.`, {action:['Deshacer', () => {
+      if(!state.cart.some(x => lineKey(x)===lineKey(l))) state.cart.splice(Math.min(i, state.cart.length), 0, l);
       save(); updateCartBadge(); renderCart();
       $('#app h1')?.focus();
-      toast(`${p.nombre} se quitó del carrito.`);
-    }
+    }]});
   }
 });
 

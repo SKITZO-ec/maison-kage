@@ -282,6 +282,7 @@ const TW = {
   toast: "bg-navy text-ivory border-l-[6px] border-gold py-4 px-[18px] min-w-[320px] max-w-[420px] grid grid-cols-[1fr_auto] gap-y-[6px] gap-x-[14px] items-start [&_:focus-visible]:outline-gold movil:min-w-0 movil:max-w-none",
   toastError: "bg-navy text-ivory border-l-[6px] border-red py-4 px-[18px] min-w-[320px] max-w-[420px] grid grid-cols-[1fr_auto] gap-y-[6px] gap-x-[14px] items-start [&_:focus-visible]:outline-gold movil:min-w-0 movil:max-w-none",
   toastText: "text-[15px] font-semibold",
+  toastAction: "col-start-1 justify-self-start min-h-[36px] px-3 bg-gold text-navy font-sans font-bold text-[14px] cursor-pointer hover:bg-ivory",
   toastLink: "text-gold font-bold col-start-1 underline",
   toastX: "col-start-2 row-start-1 bg-navy text-ivory border border-ivory w-7 h-7 cursor-pointer text-[16px] leading-none hover:bg-gold hover:text-navy hover:border-gold",
   modalRoot: "fixed inset-0 grid place-items-center z-[150]",

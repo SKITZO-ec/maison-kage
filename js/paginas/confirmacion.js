@@ -5,9 +5,9 @@ if(!o){
 } else {
   const verif = o.estado === 'Pago en verificación';
   const nombre = esc(o.envio.nombre.split(' ')[0]);
-  const u = currentUser(), dt = TW.dt, dd = TW.dd;
-  const nextBtn = u ? `<a class="${TW.btnGold}" href="pedidos.html">Ver mis pedidos</a>`
-                    : `<a class="${TW.btnGold}" href="registro.html?email=${encodeURIComponent(o.email)}">Crear cuenta para seguir tu pedido</a>`;
+  const dt = TW.dt, dd = TW.dd;
+  /* Para comprar hace falta cuenta, así que siempre se puede seguir el pedido desde Mis pedidos */
+  const nextBtn = `<a class="${TW.btnGold}" href="pedidos.html">Ver mis pedidos</a>`;
   document.title = (verif ? 'Pedido recibido' : 'Pedido confirmado') + ' | Maison Kage';
   $('#app').innerHTML = `<div class="${TW.confirm}">
     <ol class="${TW.stepsCenter}" aria-label="Pasos de la compra">
@@ -26,7 +26,7 @@ if(!o){
            </ol>
            <a class="${TW.btnNavy}" href="https://www.whatsapp.com/?lang=es" target="_blank" rel="noopener">Enviar comprobante por WhatsApp<span class="sr-only"> (se abre en otra pestaña)</span></a>
          </div>`
-      : `<p class="${TW.leadCenter}">Gracias, ${nombre}. Tu pago con ${o.metodo==='Tarjeta'?'tarjeta':'Deuna'} fue aprobado y tu número de pedido es <strong>${o.num}</strong>.</p>`}
+      : `<p class="${TW.leadCenter}">Gracias, ${nombre}. Tu pago con ${o.metodo==='Tarjeta'?'tarjeta':'Deuna'} fue aprobado y tu número de pedido es <strong>${o.num}</strong>. Te enviamos la confirmación del pedido a ${esc(o.email)}.</p>`}
     <div class="${TW.orderBox}">
       <h2 class="${TW.miniTitle}">Resumen del pedido</h2>
       <ul class="${TW.sumItems}">${o.items.map(i => `<li class="${TW.sumItem}"><span>${i.qty} × ${esc(i.nombre)} · ${i.desc}</span><span>${money(i.unit*i.qty)}</span></li>`).join('')}</ul>
