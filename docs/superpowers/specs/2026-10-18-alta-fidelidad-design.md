@@ -103,6 +103,18 @@ Decisiones clave:
 26. Comprar y quitar con datos validados. Quitar del carrito con opción de deshacer.
 27. Seguridad (sección 9).
 28. Correo de confirmación (sección 4).
+29. **Compra completa solo con el teclado.** Todo el recorrido, desde el inicio hasta la confirmación, debe poder hacerse con Tab, Shift+Tab, Enter, Espacio y Escape, sin usar el ratón. Incluye lo siguiente.
+    - Enlace "Saltar al contenido" al inicio de cada página.
+    - Orden de tabulación lógico, igual al orden visual, y foco siempre visible.
+    - Controles construidos con elementos nativos (`a`, `button`, `input`, `select`) para que el teclado los reconozca.
+    - Menú Perfumes y sus categorías abribles y cerrables con teclado, sin depender de pasar el ratón por encima.
+    - Presentaciones de decant, selector de cantidad, filtros, corazón de favoritos y botón del carrito operables con teclado.
+    - Aviso del corazón sin sesión con el foco enviado al aviso al abrirse y devuelto al corazón al cerrarse con Escape.
+    - Ventanas emergentes que atrapan el foco mientras están abiertas y lo devuelven al cerrarse.
+    - Grupos de opciones (envío o retiro, método de pago) cambiables con las flechas.
+    - Formularios con etiquetas asociadas y, si hay errores, el foco pasa al primer campo con error y el mensaje se anuncia a los lectores de pantalla.
+    - Avisos de agregado al carrito y otros mensajes anunciados con `aria-live`, sin quitar el foco de donde estaba.
+    - Ninguna trampa de teclado y ningún elemento del encabezado fijo tapando el que tiene el foco.
 
 **Mejoras por criterios de IHC**
 
@@ -132,6 +144,8 @@ Datos ficticios (precios, stock, notas y descripciones inventados). Cada categor
 | Secciones comerciales | Ofertas, Novedades, Más vendidos, Decants | Banderas |
 
 Siete familias con 10 perfumes cada una dan los 70. Los 12 perfumes actuales se reasignan. Frescos pasa a Cítrico y fresco, Gourmand se mantiene, y Noches y Oficina pasan a ser ocasiones. Se agregan 58 perfumes nuevos. Cada perfume tiene una o varias presentaciones y algunos tienen una sola.
+
+Criterio de aceptación de la navegación por teclado. Se prueba el recorrido inicio, perfume, agregar al carrito, login, checkout, pago y confirmación usando únicamente el teclado, en los tres anchos de pantalla, y debe completarse sin un solo clic.
 
 Criterio de aceptación verificable con una consulta SQL: ningún valor de Público, Origen, Familia, Ocasión, Concentración, Ofertas, Novedades, Más vendidos ni Decants tiene menos de 10 perfumes.
 
