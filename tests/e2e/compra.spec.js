@@ -25,9 +25,9 @@ test('quitar y deshacer', async ({ page }) => {
   await page.goto('carrito.html');
   await page.getByRole('button', { name: /Quitar Khamrah/ }).click();
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
-  await expect(page.locator('h1')).toBeFocused();
+  await expect(page.getByRole('button', { name: /Deshacer/ })).toBeFocused();
   expect(await page.evaluate(() => state.cart.length)).toBe(1);
-  await page.getByRole('button', { name: 'Deshacer' }).click();
+  await page.getByRole('button', { name: /Deshacer/ }).click();
   expect(await page.evaluate(() => state.cart.map(l => [l.id, l.qty]))).toEqual([['asad', 1], ['khamrah', 2]]);
   await expect(page.locator('#app ul > li')).toHaveCount(2);
 });

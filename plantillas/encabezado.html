@@ -40,7 +40,7 @@
       </ul>
     </nav>
 
-    <form class="flex-1 flex max-w-[400px] ml-auto laptop:max-w-[300px] tablet:order-3 tablet:basis-full tablet:max-w-none tablet:ml-0" role="search" id="search-form">
+    <form class="flex-1 flex max-w-[400px] ml-auto laptop:max-w-[240px] tablet:order-3 tablet:basis-full tablet:max-w-none tablet:ml-0" role="search" id="search-form">
       <label for="q" class="sr-only">Buscar por perfume, marca o nota olfativa</label>
       <input class="flex-1 h-11 border border-ivory bg-ivory text-navy px-[14px] font-sans text-[15px] leading-[normal] min-w-0 placeholder:text-navy placeholder:opacity-100 placeholder:italic" id="q" type="search" placeholder="Ej. Khamrah, vainilla, oud" autocomplete="off" list="sugerencias">
       <datalist id="sugerencias"></datalist>
@@ -56,9 +56,9 @@
         </button>
         <div class="absolute top-[calc(100%+10px)] right-0 bg-ivory text-navy border border-navy border-t-[3px] border-t-gold min-w-[240px] py-2 z-[60] [&_:focus-visible]:!outline-red [&_:focus-visible]:![outline-offset:-3px]" id="dd-account" hidden></div>
       </div>
-      <a class="h-[46px] px-4 inline-flex items-center gap-2 bg-gold text-navy border border-gold font-sans font-bold text-[14px] leading-[normal] tracking-[.06em] uppercase no-underline cursor-pointer hover:bg-ivory hover:border-ivory [&[aria-current]]:bg-ivory [&[aria-current]]:border-ivory [&_svg]:w-[22px] [&_svg]:h-[22px] movil:px-3" href="carrito.html" id="cart-link" aria-label="Carrito, 0 productos">
+      <a class="relative h-[46px] px-4 inline-flex items-center gap-2 bg-gold text-navy border border-gold font-sans font-bold text-[14px] leading-[normal] tracking-[.06em] uppercase no-underline cursor-pointer hover:bg-ivory hover:border-ivory [&[aria-current]]:bg-ivory [&[aria-current]]:border-ivory [&_svg]:w-[22px] [&_svg]:h-[22px] movil:px-3" href="carrito.html" id="cart-link" aria-label="Carrito, 0 productos">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8h14l-1 13H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="movil:sr-only">Carrito</span>
-        <span class="bg-navy text-ivory font-sans font-bold text-[12px] leading-[normal] min-w-[22px] h-[22px] px-[5px] rounded-[11px] grid place-items-center" id="cart-count" aria-hidden="true" hidden>0</span>
+        <span class="absolute -top-2 -right-2 bg-red text-ivory font-sans font-bold text-[12px] leading-[normal] min-w-[22px] h-[22px] px-[5px] rounded-[11px] grid place-items-center border-2 border-navy" id="cart-count" aria-hidden="true" hidden>0</span>
       </a>
     </div>
   </div>

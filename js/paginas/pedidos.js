@@ -1,7 +1,7 @@
 /* MAISON KAGE · Mis pedidos */
 if(requireLogin()){
   const u = currentUser();
-  const list = state.orders.filter(o => o.email === u.email);
+  const list = state.orders.filter(o => o.cuenta ? o.cuenta === state.user : o.email === u.email);
   $('#orders').innerHTML = !list.length ? `
     <div class="${TW.empty}"><div class="${TW.emptyIcon}">${ICON.box}</div><h2 class="${TW.emptyTitle}">Aún no tienes pedidos</h2><p class="${TW.emptyP}">Cuando compres un frasco o un decant lo verás aquí, con su estado de envío.</p><div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Explorar los perfumes</a></div></div>` :
     `<p class="${TW.pageIntro}">${list.length} ${list.length===1?'pedido realizado':'pedidos realizados'}.</p>` +

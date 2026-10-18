@@ -103,7 +103,7 @@ function card(p, modo=''){
     <div class="${TW.decSizes}" role="group" aria-label="Agregar un decant al carrito">${ds.map(x=>`<button type="button" class="${TW.decSizeBtn}" data-action="add-decant" data-id="${p.id}" data-ml="${x.ml}" aria-label="Agregar decant de ${x.ml} ml de ${esc(p.nombre)} al carrito, ${money(x.precio)}">${x.ml} ml</button>`).join('')}</div>
     ${f0 ? `<p class="${TW.cardDec}">Frasco ${f0.ml} ml ${agotado ? 'agotado' : 'desde '+money(precioFinal(p,f0))}</p>` : ''}
     <a class="${TW.cardBtn}" href="${url}" aria-label="Ver el decant de ${esc(p.nombre)}">Ver el decant</a>` : `
-    <p class="${TW.price}">${money(precioDesde(p))}${p.oferta && f0?`<s class="${TW.priceOld}"><span class="sr-only">Precio anterior </span>${money(f0.precio)}</s>`:''}<small class="${TW.priceUnit}">${f0 ? f0.ml+' ml' : 'decant'}</small></p>
+    <p class="${TW.price} flex flex-wrap items-baseline">${money(precioDesde(p))} ${p.oferta && f0?`<s class="${TW.priceOld}"><span class="sr-only">Precio anterior </span>${money(f0.precio)}</s> `:''}<small class="${TW.priceUnit}">${f0 ? f0.ml+' ml' : 'decant'}</small></p>
     ${ds.length && f0 ? `<p class="${TW.cardDec}">${ICON.drop} Decant desde ${money(ds[0].precio)}</p>` : ''}
     <a class="${TW.cardBtn}" href="${url}" aria-label="Ver detalle de ${esc(p.nombre)}">Ver detalle</a>`;
   return `<article class="${TW.card}" aria-labelledby="c-${p.id}">
@@ -118,11 +118,16 @@ const cartCount = () => state.cart.reduce((a,l)=>a+l.qty,0);
 const unitPrice = l => { const p = byId(l.id); return precioFinal(p, presOf(p, l.kind, l.ml)); };
 /* Cuántas unidades de una presentación se pueden tener en el carrito */
 const maxDe = (p, kind, ml) => { const x = presOf(p, kind, ml); return !x ? 0 : kind==='decant' ? Math.min(DEC_MAX, x.stock) : x.stock; };
-/* Quita del carrito las líneas de perfumes o presentaciones que ya no existen */
+/* Revisa el carrito guardado. Quita las líneas de perfumes o presentaciones que ya no existen,
+   convierte las cantidades a números enteros y las baja al máximo disponible */
 function limpiarCarrito(){
-  const antes = state.cart.length;
-  state.cart = state.cart.filter(l => l && presOf(byId(l.id), l.kind, l.ml) && l.qty > 0);
-  if(state.cart.length !== antes) save();
+  const antes = JSON.stringify(state.cart);
+  if(!Array.isArray(state.cart)) state.cart = [];
+  state.cart = state.cart.filter(l => l && presOf(byId(l.id), l.kind, l.ml)).map(l => {
+    const max = maxDe(byId(l.id), l.kind, l.ml), q = Math.floor(Number(l.qty));
+    return {...l, qty: Number.isFinite(q) ? Math.min(q, max) : 0};
+  }).filter(l => l.qty > 0);
+  if(JSON.stringify(state.cart) !== antes) save();
 }
 /* entrega: 'envio' (a domicilio) o 'retiro' (en el local, sin costo) */
 function totals(entrega='envio'){
@@ -350,8 +355,15 @@ function abrirAvisoFavorito(btn){
   avisoFav = {el, btn, id: btn.dataset.id};
   el.querySelectorAll('[data-fav-ir]').forEach(a => a.addEventListener('click', () => { try{ sessionStorage.setItem(FAV_PEND, avisoFav.id); }catch(e){} }));
   el.querySelector('[data-fav-cerrar]').onclick = () => cerrarAvisoFavorito();
-  el.addEventListener('keydown', e => { if(e.key==='Escape'){ e.stopPropagation(); cerrarAvisoFavorito(); } });
-  el.addEventListener('focusout', e => { if(avisoFav && !el.contains(e.relatedTarget) && e.relatedTarget) cerrarAvisoFavorito(false); });
+  /* El aviso está al final de la página, por eso al salir de él con Tab o Shift+Tab
+     se cierra y el foco vuelve al corazón, así el orden de lectura no salta */
+  el.addEventListener('keydown', e => {
+    if(e.key==='Escape'){ e.stopPropagation(); cerrarAvisoFavorito(); return; }
+    if(e.key!=='Tab') return;
+    const f = [...el.querySelectorAll('a, button')];
+    if((e.shiftKey && document.activeElement===f[0]) || (!e.shiftKey && document.activeElement===f[f.length-1])){ e.preventDefault(); cerrarAvisoFavorito(); }
+  });
+  el.addEventListener('focusout', e => { if(avisoFav && !el.contains(e.relatedTarget)) cerrarAvisoFavorito(false); });
   el.querySelector('a').focus();
 }
 function cerrarAvisoFavorito(devolverFoco=true){
@@ -518,7 +530,7 @@ document.addEventListener('click', async e => {
     toast(`Número de guía ${fmtGuia(g)} copiado.`);
     return;
   }
-  if(a==='add-decant'){ addToCart(t.dataset.id, 'decant', +t.dataset.ml, 1); return; }
+  if(a==='add-decant'){ if(t.getAttribute('aria-disabled')==='true') return; addToCart(t.dataset.id, 'decant', +t.dataset.ml, 1); return; }
   if(a==='back'){ history.length>1 ? history.back() : (location.href='index.html'); return; }
   if(a==='focus-field'){ document.getElementById(t.dataset.target)?.focus(); return; }
   if(a==='fav'){
@@ -555,11 +567,28 @@ $('#search-form').addEventListener('submit', e => {
   location.href = 'buscar.html?q=' + encodeURIComponent($('#q').value.trim());
 });
 
+/* El encabezado es fijo, así que al moverse con el teclado la página deja
+   arriba un espacio igual a su altura real para que no tape el elemento con foco */
+function ajustarEspacioEncabezado(){
+  const h = $('header')?.offsetHeight || 0;
+  document.documentElement.style.scrollPaddingTop = (h + 16) + 'px';
+}
+if(window.ResizeObserver && $('header')) new ResizeObserver(ajustarEspacioEncabezado).observe($('header'));
+
+/* Si la dirección apunta a una pregunta de Ayuda, la pregunta se abre */
+function abrirDetallesDelEnlace(){
+  const d = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if(d && d.tagName==='DETAILS'){ d.open = true; d.scrollIntoView(); }
+}
+addEventListener('hashchange', abrirDetallesDelEnlace);
+
 /* ---------- Inicio común ---------- */
+ajustarEspacioEncabezado();
 limpiarCarrito();
 renderAccountMenu();
 renderAccUser();
 updateCartBadge();
 markNav();
+abrirDetallesDelEnlace();
 showFlash();
 if(currentUser()) aplicarFavoritoPendiente();

@@ -25,7 +25,7 @@ function catContext(){
   if(q.get('oferta')) return {title:'Ofertas', crumb:'Ofertas', desc:'Descuentos de la semana en frasco completo. Los precios de decant no cambian.'};
   if(q.get('novedad')) return {title:'Novedades', crumb:'Novedades', desc:'Los perfumes que acaban de llegar a Maison Kage.'};
   if(q.get('top')) return {title:'Más vendidos', crumb:'Más vendidos', desc:'Los perfumes que más eligen nuestros clientes.'};
-  if(q.get('decant')) return {title:'Decants', crumb:'Decants', desc:'Perfumes disponibles en decant de 2, 5 y 10 ml. Elige el perfume y luego el tamaño en su ficha.'};
+  if(q.get('decant')) return {title:'Decants', crumb:'Decants', desc:'Perfumes disponibles en decant de 2, 5 y 10 ml. Toca un tamaño para agregarlo a tu carrito o abre el decant para ver su detalle.'};
   return {title:'Todos los perfumes', crumb:null, desc:'Todos nuestros perfumes en frasco y decant.'};
 }
 

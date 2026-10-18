@@ -47,7 +47,8 @@ test('animaciones reducidas cuando la persona lo pide', async ({ page }) => {
   await page.goto('index.html');
   const hay = await page.evaluate(() => [...document.styleSheets].some(ss => { try { return [...ss.cssRules].some(r => r.media && /prefers-reduced-motion/.test(r.media.mediaText)); } catch (e) { return false; } }));
   expect(hay).toBe(true);
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingTop)).toBe('120px');
+  const [pad, alto] = await page.evaluate(() => [getComputedStyle(document.documentElement).scrollPaddingTop, document.querySelector('header').offsetHeight]);
+  expect(pad).toBe((alto + 16) + 'px');
 });
 
 test('sin desborde horizontal en ninguna página', async ({ page }) => {

@@ -16,7 +16,7 @@ if(!o){
     <span class="${verif ? TW.sealWait : TW.sealBig}" aria-hidden="true">${(verif?ICON.clock:ICON.check).replace('<svg','<svg width="40" height="40"')}</span>
     <h1 class="${TW.pageTitle}">${verif ? 'Pedido recibido' : '¡Pedido confirmado!'}</h1>
     ${verif
-      ? `<p class="${TW.leadCenter}">Gracias, ${nombre}. Guardamos tu pedido <strong>${o.num}</strong> y estamos confirmando tu pago con Deuna. <strong>No vuelvas a pagar.</strong></p>
+      ? `<p class="${TW.leadCenter}">Gracias, ${nombre}. Guardamos tu pedido <strong>${o.num}</strong> y estamos confirmando tu pago con Deuna. <strong>No vuelvas a pagar.</strong> Te enviamos la confirmación del pedido a ${esc(o.email)}.</p>
          <div class="${TW.nextBox}">
            <h2 class="${TW.miniTitle}">Qué pasa ahora</h2>
            <ol class="${TW.nextList}">

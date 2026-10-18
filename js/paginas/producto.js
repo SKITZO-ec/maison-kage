@@ -38,7 +38,7 @@ function notaDecant(x){
 }
 function decBtn(x){
   const nt = notaDecant(x);
-  return `<div><button type="button" class="${TW.decAdd}" data-action="add-decant" data-id="${p.id}" data-ml="${x.ml}" ${nt.lleno?'disabled':''} aria-describedby="dec-n-${x.ml}">
+  return `<div><button type="button" class="${TW.decAdd}" data-action="add-decant" data-id="${p.id}" data-ml="${x.ml}" aria-disabled="${nt.lleno}" aria-describedby="dec-n-${x.ml}">
       <span class="${TW.decAddTop}">Agregar ${x.ml} ml · ${money(x.precio)}</span><span class="${TW.decAddSub}">${DEC_SPRAYS[x.ml] || ''}</span></button>
     <p class="${nt.cls}" id="dec-n-${x.ml}" aria-live="polite">${nt.txt}</p></div>`;
 }
@@ -163,7 +163,7 @@ function actualizarDecants(){
   OPCIONES.forEach(x => {
     const b = $(`#dec-btns [data-ml="${x.ml}"]`), nota = $('#dec-n-'+x.ml), nt = notaDecant(x);
     if(!b) return;
-    b.disabled = nt.lleno; nota.className = nt.cls; nota.textContent = nt.txt;
+    b.setAttribute('aria-disabled', nt.lleno); nota.className = nt.cls; nota.textContent = nt.txt;
   });
 }
 document.addEventListener('mk:carrito', () => { if(p && ES_DECANT) actualizarDecants(); });
@@ -176,18 +176,20 @@ function updatePD(){
   if(p.oferta) $('#pd-old').innerHTML = `<span class="sr-only">Precio anterior </span>${money(pres.precio)}`;
   $('#pd-qty').textContent = pd.qty;
   const [minus, plus] = $$('[data-action=pd-qty]');
-  minus.disabled = pd.qty<=1; plus.disabled = pd.qty>=avail;
+  /* Se usa aria-disabled en lugar de disabled para que el botón no pierda el foco */
+  minus.setAttribute('aria-disabled', pd.qty<=1); plus.setAttribute('aria-disabled', pd.qty>=avail);
   const st = $('#pd-stock');
   st.className = avail<=3 ? TW.stockAlert : TW.stock;
   st.innerHTML = pres.stock===0 ? `Frasco de ${pd.ml} ml agotado.${decants(p).length?` <a class="underline" href="${urlDecant(p.id)}">Pruébalo en decant</a>`:''}` :
     avail<=0 ? `Ya tienes en tu carrito las ${pres.stock} unidades disponibles.` :
     avail<=5 ? `Quedan ${avail} ${avail===1?'unidad':'unidades'}` : 'Disponible';
-  $('#pd-add').disabled = $('#pd-buy').disabled = avail<=0;
+  $('#pd-add').setAttribute('aria-disabled', avail<=0); $('#pd-buy').setAttribute('aria-disabled', avail<=0);
 }
 
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-action]');
   if(!t || !p) return;
+  if(t.getAttribute('aria-disabled')==='true') return;
   const a = t.dataset.action;
   if(a==='thumb'){
     $$('[data-action=thumb]').forEach(b => b.setAttribute('aria-pressed', b===t));

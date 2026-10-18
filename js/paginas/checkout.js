@@ -195,6 +195,8 @@ function createOrder(data, metodo, estado, num){
   const items = state.cart.map(l => { const p = byId(l.id); return {nombre:p.nombre, desc:(l.kind==='decant'?'Decant ':'Frasco ')+l.ml+' ml', qty:l.qty, unit:unitPrice(l)}; });
   const o = {num, fecha:new Date().toLocaleDateString('es-EC',{day:'numeric',month:'short',year:'numeric'}), estado, metodo, items,
              total:totals(data.entrega).total, email:data.email, entrega:data.entrega,
+             /* El pedido queda ligado a la cuenta aunque se use otro correo de contacto */
+             cuenta:state.user,
              /* Guía simulada de 12 dígitos. En producción la entrega Servientrega al generar el envío */
              guia:data.entrega==='envio' ? String(Math.floor(1e11 + Math.random()*9e11)) : null,
              envio:{nombre:data.nombre, dir:data.dir, ciudad:data.ciudad, tel:data.tel}};

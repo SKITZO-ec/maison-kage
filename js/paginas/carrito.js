@@ -1,9 +1,19 @@
-/* MAISON KAGE · Carrito */
+/* MAISON KAGE · Carrito
+   Quitar un producto es inmediato. En su lugar aparece un aviso con el botón Deshacer,
+   que recibe el foco para que también se pueda usar con el teclado */
+let quitado = null;
+function undoHTML(){
+  if(!quitado) return '';
+  const p = byId(quitado.l.id);
+  return `<div class="${TW.undoRow}" role="status"><p>${esc(p.nombre)} ${quitado.l.kind==='decant'?'decant ':''}${quitado.l.ml} ml se quitó del carrito.</p>
+    <button type="button" class="${TW.btnOutline}" data-action="cart-undo" aria-label="Deshacer, volver a agregar ${esc(p.nombre)} ${quitado.l.ml} ml">Deshacer</button></div>`;
+}
 function renderCart(){
-  if(!state.cart.length){ $('#app').innerHTML = emptyCartHTML(); return; }
+  if(!state.cart.length){ $('#app').innerHTML = undoHTML() + emptyCartHTML(); return; }
   const t = totals(), n = cartCount();
   $('#app').innerHTML = `
     <header class="${TW.pageHead}"><h1 class="${TW.pageTitleFocus}" tabindex="-1">Tu carrito</h1><p class="${TW.pageHeadP}">${n} ${n===1?'producto':'productos'} listos para el pago.</p></header>
+    ${undoHTML()}
     <div class="${TW.cart}">
       <ul class="${TW.lines}">${state.cart.map(l => {
         const p = byId(l.id), key = lineKey(l), unit = unitPrice(l);
@@ -44,17 +54,18 @@ document.addEventListener('click', async e => {
     const again = $(`[data-action=cart-qty][data-key="${t.dataset.key}"][data-d="${t.dataset.d}"]`);
     (again && !again.disabled ? again : $(`[data-action=cart-qty][data-key="${t.dataset.key}"]:not([disabled])`))?.focus();
   }
-  /* Quitar es inmediato y se puede deshacer desde el aviso, sin pedir confirmación */
   if(t.dataset.action==='cart-remove'){
-    const i = state.cart.findIndex(x => lineKey(x)===t.dataset.key), l = state.cart[i], p = byId(l.id);
+    const i = state.cart.findIndex(x => lineKey(x)===t.dataset.key);
+    quitado = {l: state.cart[i], i};
     state.cart.splice(i, 1);
     save(); updateCartBadge(); renderCart();
-    $('#app h1')?.focus();
-    toast(`${p.nombre} se quitó del carrito.`, {action:['Deshacer', () => {
-      if(!state.cart.some(x => lineKey(x)===lineKey(l))) state.cart.splice(Math.min(i, state.cart.length), 0, l);
-      save(); updateCartBadge(); renderCart();
-      $('#app h1')?.focus();
-    }]});
+    $('[data-action=cart-undo]').focus();
+  }
+  if(t.dataset.action==='cart-undo' && quitado){
+    const {l, i} = quitado; quitado = null;
+    if(!state.cart.some(x => lineKey(x)===lineKey(l))) state.cart.splice(Math.min(i, state.cart.length), 0, l);
+    save(); updateCartBadge(); renderCart();
+    $(`[data-action=cart-remove][data-key="${lineKey(l)}"]`)?.focus();
   }
 });
 

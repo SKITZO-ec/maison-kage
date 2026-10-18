@@ -25,7 +25,7 @@ if(requireLogin()){
       if(!(await passOk(u, $('#pf-pass').value))) return marcarError('pf-pass', 'La contraseña actual no es correcta.');
       /* La cuenta y sus pedidos pasan al correo nuevo */
       delete state.accounts[u.email];
-      state.orders.forEach(o => { if(o.email===u.email) o.email = email; });
+      state.orders.forEach(o => { if(o.email===u.email) o.email = email; if(o.cuenta===u.email) o.cuenta = email; });
       state.accounts[email] = u; state.user = email;
     }
     Object.assign(u, {nombre:$('#pf-nombre').value.trim(), apellido:$('#pf-apellido').value.trim(), email, tel:$('#pf-tel').value.trim(), nac:$('#pf-nac').value});
