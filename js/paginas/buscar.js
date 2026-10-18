@@ -2,7 +2,7 @@
 function searchProducts(q){
   const terms = norm(q).split(/\s+/).filter(Boolean);
   return PRODUCTS.filter(p => {
-    const hay = norm([p.nombre, p.marca, TIPOS[p.tipo], PUBLICOS[p.publico], COLS[p.col], ...p.notas.flat(), ...p.acordes.map(a=>a[0]), ...p.ocasion, p.tipo==='arabe'?'arabe arabes':'disenador'].join(' '));
+    const hay = norm([p.nombre, p.marca, ORIGENES[p.origen], PUBLICOS[p.publico], FAMILIAS[p.familia], p.conc, ...p.notas.flat(), ...p.acordes.map(a=>a[0]), ...p.ocasion, p.origen==='arabe'?'arabes':''].join(' '));
     return terms.every(t => hay.includes(t));
   });
 }

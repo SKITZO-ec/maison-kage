@@ -10,9 +10,18 @@ const money = n => '$' + n.toFixed(2);
 const byId = id => PRODUCTS.find(p => p.id === id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
-const finalPrice = (p, ml) => { const b = ml === 100 ? p.p100 : p.p50; return p.oferta ? Math.round(b * (100 - p.oferta)) / 100 : b; };
-const basePrice = (p, ml) => ml === 100 ? p.p100 : p.p50;
-const decPrice = (p, ml) => p.dec[DEC_SIZES.indexOf(ml)];
+/* ---------- Presentaciones ----------
+   Cada perfume tiene una lista de presentaciones, frascos y decants,
+   con su contenido en ml, su precio y su stock */
+const porMl = (a, b) => a.ml - b.ml;
+const frascos = p => p.pres.filter(x => x.tipo==='frasco').sort(porMl);
+const decants = p => p.pres.filter(x => x.tipo==='decant').sort(porMl);
+const presOf = (p, tipo, ml) => p ? p.pres.find(x => x.tipo===tipo && x.ml===ml) : undefined;
+/* La oferta solo baja el precio de los frascos, el de los decants no cambia */
+const precioFinal = (p, pres) => pres.tipo==='frasco' && p.oferta ? Math.round(pres.precio * (100 - p.oferta)) / 100 : pres.precio;
+/* Precio más bajo con el que se puede llevar el perfume */
+const precioDesde = p => { const f = frascos(p); return f.length ? Math.min(...f.map(x => precioFinal(p, x))) : Math.min(...decants(p).map(x => x.precio)); };
+const urlProducto = (id, decant=false) => `producto.html?id=${id}${decant ? '&formato=decant' : ''}`;
 const params = new URLSearchParams(location.search);
 const PAGE = decodeURIComponent(location.pathname.split('/').pop()) || 'index.html';
 
@@ -76,25 +85,26 @@ function favBtn(p, inline=false){
 /* modo 'decant': la tarjeta muestra primero el precio y los tamaños del decant y lleva a la ficha con Decant elegido */
 function card(p, modo=''){
   if(typeof modo !== 'string') modo = '';
-  const dec = modo==='decant';
-  const url = `producto.html?id=${p.id}${dec?'&formato=decant':''}`;
-  const price = finalPrice(p,50);
+  const dec = modo==='decant' && decants(p).length>0;
+  const url = urlProducto(p.id, dec);
+  const fr = frascos(p), ds = decants(p), f0 = fr[0];
+  const agotado = fr.length && fr.every(x => x.stock===0);
   const media = `<a class="${TW.cardMediaLink}" href="${url}" tabindex="-1">
       ${foto(p, dec?'decant':'frente', (dec?'Decant de ':'Frasco de ')+p.nombre+' de '+p.marca)}
-      ${!dec && p.oferta ? `<span class="${TW.cardSeal}" aria-label="Oferta, ${p.oferta} por ciento de descuento">-${p.oferta}%</span>` : ''}
-      ${dec ? `<span class="${TW.cardTagGold}">Decant</span>` : p.stock===0 ? `<span class="${TW.cardTag}">Frasco agotado</span>` : p.tend ? `<span class="${TW.cardTagGold}">Tendencia</span>` : ''}
+      ${!dec && p.oferta && f0 ? `<span class="${TW.cardSeal}" aria-label="Oferta, ${p.oferta} por ciento de descuento">-${p.oferta}%</span>` : ''}
+      ${dec ? `<span class="${TW.cardTagGold}">Decant</span>` : agotado ? `<span class="${TW.cardTag}">Frasco agotado</span>` : p.novedad ? `<span class="${TW.cardTagGold}">Novedad</span>` : p.top ? `<span class="${TW.cardTagGold}">Más vendido</span>` : ''}
     </a>`;
   const head = `${favBtn(p)}
-    <p class="${TW.cardBrand}">${esc(p.marca)} · ${TIPOS[p.tipo]}</p>
+    <p class="${TW.cardBrand}">${esc(p.marca)} · ${ORIGENES[p.origen]}</p>
     <h3 class="${TW.cardName}" id="c-${p.id}"><a class="${TW.cardNameLink}" href="${url}">${esc(p.nombre)}</a></h3>
     <p class="${TW.cardMeta}">${PUBLICOS[p.publico]} · ${p.conc}</p>`;
   const body = dec ? `
-    <p class="${TW.price}"><small class="${TW.priceFrom}">Decant desde </small>${money(p.dec[0])}</p>
-    <p class="${TW.decSizes}" aria-label="Tamaños disponibles ${DEC_SIZES.join(', ')} mililitros">${DEC_SIZES.map(ml=>`<span class="${TW.decSize}">${ml} ml</span>`).join('')}</p>
-    <p class="${TW.cardDec}">Frasco 50 ml ${p.stock===0 ? 'agotado' : 'desde '+money(price)}</p>
+    <p class="${TW.price}"><small class="${TW.priceFrom}">Decant desde </small>${money(ds[0].precio)}</p>
+    <p class="${TW.decSizes}" aria-label="Tamaños disponibles ${ds.map(x=>x.ml).join(', ')} mililitros">${ds.map(x=>`<span class="${TW.decSize}">${x.ml} ml</span>`).join('')}</p>
+    ${f0 ? `<p class="${TW.cardDec}">Frasco ${f0.ml} ml ${agotado ? 'agotado' : 'desde '+money(precioFinal(p,f0))}</p>` : ''}
     <a class="${TW.cardBtn}" href="${url}" aria-label="Elegir tamaño de decant de ${esc(p.nombre)}">Elegir tamaño</a>` : `
-    <p class="${TW.price}">${money(price)}${p.oferta?`<s class="${TW.priceOld}"><span class="sr-only">Precio anterior </span>${money(p.p50)}</s>`:''}<small class="${TW.priceUnit}">50 ml</small></p>
-    <p class="${TW.cardDec}">${ICON.drop} Decant desde ${money(p.dec[0])}</p>
+    <p class="${TW.price}">${money(precioDesde(p))}${p.oferta && f0?`<s class="${TW.priceOld}"><span class="sr-only">Precio anterior </span>${money(f0.precio)}</s>`:''}<small class="${TW.priceUnit}">${f0 ? f0.ml+' ml' : 'decant'}</small></p>
+    ${ds.length && f0 ? `<p class="${TW.cardDec}">${ICON.drop} Decant desde ${money(ds[0].precio)}</p>` : ''}
     <a class="${TW.cardBtn}" href="${url}" aria-label="Ver detalle de ${esc(p.nombre)}">Ver detalle</a>`;
   return `<article class="${TW.card}" aria-labelledby="c-${p.id}">
     ${media}
@@ -105,26 +115,32 @@ function card(p, modo=''){
 /* ---------- Carrito ---------- */
 const lineKey = l => `${l.id}|${l.kind}|${l.ml}`;
 const cartCount = () => state.cart.reduce((a,l)=>a+l.qty,0);
-const unitPrice = l => { const p = byId(l.id); return l.kind==='decant' ? decPrice(p,l.ml) : finalPrice(p,l.ml); };
+const unitPrice = l => { const p = byId(l.id); return precioFinal(p, presOf(p, l.kind, l.ml)); };
+/* Cuántas unidades de una presentación se pueden tener en el carrito */
+const maxDe = (p, kind, ml) => { const x = presOf(p, kind, ml); return !x ? 0 : kind==='decant' ? Math.min(DEC_MAX, x.stock) : x.stock; };
+/* Quita del carrito las líneas de perfumes o presentaciones que ya no existen */
+function limpiarCarrito(){
+  const antes = state.cart.length;
+  state.cart = state.cart.filter(l => l && presOf(byId(l.id), l.kind, l.ml) && l.qty > 0);
+  if(state.cart.length !== antes) save();
+}
 /* entrega: 'envio' (a domicilio) o 'retiro' (en el local, sin costo) */
 function totals(entrega='envio'){
   const sub = state.cart.reduce((a,l)=>a+unitPrice(l)*l.qty,0);
   const ship = entrega==='retiro' || sub===0 || sub>=FREE_SHIP ? 0 : SHIP;
   return {sub, ship, total: sub+ship, entrega};
 }
-const frascoUsed = (id, exceptKey) => state.cart.filter(l=>l.id===id && l.kind==='frasco' && lineKey(l)!==exceptKey).reduce((a,l)=>a+l.qty,0);
+/* Unidades de una presentación que ya están en el carrito */
+const enCarrito = (id, kind, ml) => state.cart.filter(l => l.id===id && l.kind===kind && l.ml===ml).reduce((a,l)=>a+l.qty,0);
 
 function addToCart(id, kind, ml, qty, silent=false){
-  const p = byId(id);
+  const p = byId(id), pres = presOf(p, kind, ml);
+  if(!pres) return false;
   const line = state.cart.find(l=>l.id===id && l.kind===kind && l.ml===ml);
-  if(kind==='frasco'){
-    const used = frascoUsed(id);
-    if(used + qty > p.stock){
-      toast(p.stock===0 ? `${p.nombre} está agotado en frasco. Puedes llevarlo como decant.` : `Solo hay ${p.stock} unidades de ${p.nombre} y ya tienes ${used} en tu carrito.`, {type:'error'});
-      return false;
-    }
-  } else if((line?line.qty:0) + qty > DEC_MAX){
-    toast(`Puedes llevar hasta ${DEC_MAX} decants de ${ml} ml del mismo perfume.`, {type:'error'});
+  const used = line ? line.qty : 0, max = maxDe(p, kind, ml);
+  if(used + qty > max){
+    if(kind==='frasco') toast(pres.stock===0 ? `${p.nombre} de ${ml} ml está agotado.${decants(p).length?' Puedes llevarlo como decant.':''}` : `Solo hay ${pres.stock} unidades de ${p.nombre} de ${ml} ml y ya tienes ${used} en tu carrito.`, {type:'error'});
+    else toast(max < DEC_MAX ? `Solo quedan ${max} decants de ${ml} ml de ${p.nombre}.` : `Puedes llevar hasta ${DEC_MAX} decants de ${ml} ml del mismo perfume.`, {type:'error'});
     return false;
   }
   if(line) line.qty += qty; else state.cart.push({id, kind, ml, qty});
@@ -439,6 +455,7 @@ $('#search-form').addEventListener('submit', e => {
 });
 
 /* ---------- Inicio común ---------- */
+limpiarCarrito();
 renderAccountMenu();
 renderAccUser();
 updateCartBadge();

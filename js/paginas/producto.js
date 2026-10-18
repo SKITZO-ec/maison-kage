@@ -3,11 +3,15 @@
    producto.html?id=khamrah&formato=decant   ficha del decant (apartado propio)
    Cada ficha tiene una sola decisión de tamaño. */
 const p = byId(params.get('id'));
-const ES_DECANT = params.get('formato') === 'decant';
-const urlFrasco = id => `producto.html?id=${id}`;
-const urlDecant = id => `producto.html?id=${id}&formato=decant`;
+/* Ficha de decant solo si el perfume tiene decants, y siempre si no tiene frascos */
+const ES_DECANT = !!p && decants(p).length>0 && (params.get('formato') === 'decant' || !frascos(p).length);
+const KIND = ES_DECANT ? 'decant' : 'frasco';
+const urlFrasco = id => urlProducto(id);
+const urlDecant = id => urlProducto(id, true);
+/* Presentaciones que se eligen en esta ficha */
+const OPCIONES = p ? (ES_DECANT ? decants(p) : frascos(p)) : [];
 /* Texto natural para el enlace de cada ocasión de uso */
-const OCASION_TXT = {'Día':'el día','Noche':'la noche','Oficina':'la oficina','Citas':'citas','Fiesta':'fiestas','Verano':'el verano','Invierno':'el invierno'};
+const OCASION_TXT = {'Oficina':'la oficina','Diario':'el día a día','Citas':'citas','Noche':'la noche','Verano':'el verano','Eventos':'eventos'};
 /* Nombre accesible de cada foto, por ejemplo Frasco de frente de Khamrah de Lattafa */
 const fotoLabel = v => v+' de '+p.nombre+' de '+p.marca;
 let pd;
@@ -15,9 +19,9 @@ if(!p) location.replace('404.html');
 else renderProduct();
 
 function renderProduct(){
-  pd = {ml: ES_DECANT ? 5 : 50, qty: 1};
+  pd = {ml: (OPCIONES.find(x => x.ml===5) || OPCIONES[0]).ml, qty: 1};
   document.title = (ES_DECANT ? 'Decant de ' : '') + p.nombre + ' de ' + p.marca + ' | Maison Kage';
-  const related = PRODUCTS.filter(x => x.id!==p.id && (x.col===p.col || x.publico===p.publico)).slice(0,4);
+  const related = PRODUCTS.filter(x => x.id!==p.id && (x.familia===p.familia || x.publico===p.publico) && (!ES_DECANT || decants(x).length)).slice(0,4);
   const views = ES_DECANT ? ['Decant en atomizador','Decant junto al frasco original','Etiqueta y sello Maison Kage']
                           : ['Frasco de frente','Frasco de perfil','Caja original'];
   /* nombre del archivo de cada vista dentro de img/productos */
@@ -25,9 +29,7 @@ function renderProduct(){
   const cr = TW.crumb;
   /* Opción tipo radio: recuadro que se pinta de azul noche al elegirlo */
   const opt = (name, ml, on, price, extra) => `<label class="${TW.opt}"><input type="radio" name="${name}" value="${ml}" class="${TW.optInput}" ${on?'checked':''}><span class="${TW.optBox}"><strong class="${TW.optStrong}">${ml} ml</strong><small class="${TW.optSmall}">${price}</small>${extra?`<em class="${TW.optEm}">${extra}</em>`:''}</span></label>`;
-  const sizes = ES_DECANT
-    ? `<fieldset class="${TW.opts}"><legend class="${TW.optsLegend}">Tamaño</legend>${DEC_SIZES.map(ml=>opt('pd-ml', ml, ml===5, money(decPrice(p,ml)), DEC_SPRAYS[ml])).join('')}</fieldset>`
-    : `<fieldset class="${TW.opts}"><legend class="${TW.optsLegend}">Tamaño</legend>${[50,100].map(ml=>opt('pd-ml', ml, ml===50, money(finalPrice(p,ml)))).join('')}</fieldset>`;
+  const sizes = `<fieldset class="${TW.opts}"><legend class="${TW.optsLegend}">Tamaño</legend>${OPCIONES.map(x=>opt('pd-ml', x.ml, x.ml===pd.ml, money(precioFinal(p,x)), ES_DECANT ? DEC_SPRAYS[x.ml] : '')).join('')}</fieldset>`;
   const ocasiones = p.ocasion.map(o => `<li><a class="${TW.tagLink}" href="catalogo.html?ocasion=${encodeURIComponent(o)}" aria-label="Ver perfumes para ${OCASION_TXT[o]||o}">${o}</a></li>`).join('');
 
   $('#app').innerHTML = `
@@ -35,7 +37,7 @@ function renderProduct(){
       <li class="${cr}"><a class="underline" href="index.html">Inicio</a></li>
       ${ES_DECANT
         ? `<li class="${cr}"><a class="underline" href="catalogo.html?decant=1">Decants</a></li>`
-        : `<li class="${cr}"><a class="underline" href="catalogo.html">Perfumes</a></li><li class="${cr}"><a class="underline" href="catalogo.html?tipo=${p.tipo}">${p.tipo==='arabe'?'Árabes':'Diseñador'}</a></li>`}
+        : `<li class="${cr}"><a class="underline" href="catalogo.html">Perfumes</a></li><li class="${cr}"><a class="underline" href="catalogo.html?origen=${p.origen}">${ORIGENES[p.origen]}</a></li>`}
       <li class="${cr}" aria-current="page">${esc(p.nombre)}</li></ol></nav>
     <div class="${TW.pd}">
       <div>
@@ -46,9 +48,9 @@ function renderProduct(){
         </div>
       </div>
       <div>
-        <p class="${TW.eyebrow}">${esc(p.marca)} · ${ES_DECANT ? 'Decant' : 'Perfume '+TIPOS[p.tipo].toLowerCase()}</p>
+        <p class="${TW.eyebrow}">${esc(p.marca)} · ${ES_DECANT ? 'Decant' : 'Perfume '+ORIGENES[p.origen].toLowerCase()}</p>
         <h1 class="${TW.pdName}">${esc(p.nombre)}</h1>
-        <p class="${TW.pdMeta}">${ES_DECANT ? `Decant de ${p.conc} · Atomizador de vidrio` : `${p.conc} · ${PUBLICOS[p.publico]} · Colección ${COLS[p.col]}`}</p>
+        <p class="${TW.pdMeta}">${ES_DECANT ? `Decant de ${p.conc} · Atomizador de vidrio` : `${p.conc} · ${PUBLICOS[p.publico]} · ${FAMILIAS[p.familia]}`}</p>
         <div class="${TW.pdPrice}">
           <span class="${TW.priceLg}" id="pd-price"></span>
           ${!ES_DECANT && p.oferta ? `<s class="${TW.priceOld}" id="pd-old"></s><span class="${TW.sealInline}" aria-label="Oferta, ${p.oferta} por ciento de descuento">-${p.oferta}%</span>` : ''}
@@ -74,7 +76,7 @@ function renderProduct(){
           <li class="${TW.perk}">${ICON.shield} ${ES_DECANT ? 'Del mismo frasco original, envasado a mano' : 'Producto original con sello de cera Maison Kage'}</li>
           <li class="${TW.perk}">${ICON.check} Pago con tarjeta o con Deuna</li>
         </ul>
-        ${ES_DECANT ? `<p class="${TW.crossLink}">¿Te gustó? <a class="underline font-semibold" href="${urlFrasco(p.id)}">Ver el frasco completo de ${esc(p.nombre)}</a></p>` : ''}
+        ${ES_DECANT && frascos(p).length ? `<p class="${TW.crossLink}">¿Te gustó? <a class="underline font-semibold" href="${urlFrasco(p.id)}">Ver el frasco completo de ${esc(p.nombre)}</a></p>` : ''}
       </div>
     </div>
 
@@ -84,7 +86,7 @@ function renderProduct(){
         <button type="button" class="${TW.tab}" role="tab" id="tab-uso" aria-selected="false" aria-controls="panel-uso" tabindex="-1" data-action="tab">Modo de uso</button>
       </div>
       <div class="${TW.tabPanel}" role="tabpanel" id="panel-desc" aria-labelledby="tab-desc" tabindex="0">
-        <p>${DESC[p.id] || ''}</p>
+        <p>${esc(p.desc)}</p>
       </div>
       <div class="${TW.tabPanel}" role="tabpanel" id="panel-uso" aria-labelledby="tab-uso" tabindex="0" hidden>
         <p>${USO_CONC[p.conc] || ''}</p>
@@ -107,7 +109,7 @@ function renderProduct(){
       </section>
     </div>
 
-    ${ES_DECANT ? '' : `
+    ${ES_DECANT || !decants(p).length ? '' : `
     <section class="${TW.decantBand}" aria-labelledby="h-dec">
       <div class="${TW.decGrid}">
         <div>
@@ -118,7 +120,7 @@ function renderProduct(){
         </div>
         <div class="${TW.decAsk}">
           <h3 class="${TW.decAskTitle}">¿No estás seguro?</h3>
-          <p>Pruébalo desde <strong>${money(p.dec[0])}</strong> antes de comprar el frasco. Hay decants de ${DEC_SIZES.join(', ').replace(/, (\d+)$/, ' y $1')} ml.</p>
+          <p>Pruébalo desde <strong>${money(decants(p)[0].precio)}</strong> antes de comprar el frasco. Hay decants de ${decants(p).map(x=>x.ml).join(', ').replace(/, (\d+)$/, ' y $1')} ml.</p>
           <a class="${TW.btnNavy} mt-4" href="${urlDecant(p.id)}">Ver el decant</a>
         </div>
       </div>
@@ -133,13 +135,12 @@ function renderProduct(){
 }
 
 /* Cuántos decants de un tamaño ya están en el carrito (máximo DEC_MAX por tamaño) */
-function decInCart(ml){ return state.cart.filter(l => l.id===p.id && l.kind==='decant' && l.ml===ml).reduce((a,l)=>a+l.qty,0); }
-
 function updatePD(){
-  const avail = ES_DECANT ? DEC_MAX - decInCart(pd.ml) : p.stock - frascoUsed(p.id);
+  const pres = presOf(p, KIND, pd.ml);
+  const avail = maxDe(p, KIND, pd.ml) - enCarrito(p.id, KIND, pd.ml);
   if(pd.qty > Math.max(avail,1)) pd.qty = Math.max(avail,1);
-  $('#pd-price').textContent = `${money(ES_DECANT ? decPrice(p,pd.ml) : finalPrice(p,pd.ml))} · ${pd.ml} ml`;
-  if(!ES_DECANT && p.oferta) $('#pd-old').innerHTML = `<span class="sr-only">Precio anterior </span>${money(basePrice(p,pd.ml))}`;
+  $('#pd-price').textContent = `${money(precioFinal(p, pres))} · ${pd.ml} ml`;
+  if(!ES_DECANT && p.oferta) $('#pd-old').innerHTML = `<span class="sr-only">Precio anterior </span>${money(pres.precio)}`;
   $('#pd-qty').textContent = pd.qty;
   const [minus, plus] = $$('[data-action=pd-qty]');
   minus.disabled = pd.qty<=1; plus.disabled = pd.qty>=avail;
@@ -149,8 +150,8 @@ function updatePD(){
     st.textContent = avail<=0 ? `Ya tienes ${DEC_MAX} decants de ${pd.ml} ml en tu carrito, el máximo por tamaño.` : 'Preparado a mano en 24 horas';
   } else {
     st.className = avail<=3 ? TW.stockAlert : TW.stock;
-    st.innerHTML = p.stock===0 ? `Frasco agotado. <a class="underline" href="${urlDecant(p.id)}">Pruébalo en decant</a>` :
-      avail<=0 ? `Ya tienes en tu carrito las ${p.stock} unidades disponibles.` :
+    st.innerHTML = pres.stock===0 ? `Frasco de ${pd.ml} ml agotado.${decants(p).length?` <a class="underline" href="${urlDecant(p.id)}">Pruébalo en decant</a>`:''}` :
+      avail<=0 ? `Ya tienes en tu carrito las ${pres.stock} unidades disponibles.` :
       avail<=5 ? `Quedan ${avail} ${avail===1?'unidad':'unidades'}` : 'Disponible';
   }
   $('#pd-add').disabled = $('#pd-buy').disabled = avail<=0;
@@ -168,7 +169,7 @@ document.addEventListener('click', e => {
   }
   if(a==='pd-qty'){ pd.qty = Math.max(1, pd.qty + +t.dataset.d); updatePD(); }
   if(a==='pd-add' || a==='pd-buy'){
-    if(addToCart(p.id, ES_DECANT?'decant':'frasco', pd.ml, pd.qty, a==='pd-buy')){
+    if(addToCart(p.id, KIND, pd.ml, pd.qty, a==='pd-buy')){
       if(a==='pd-buy') location.href = 'checkout.html';
       else { pd.qty = 1; updatePD(); }
     }

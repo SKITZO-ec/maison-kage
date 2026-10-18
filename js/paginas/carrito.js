@@ -7,11 +7,11 @@ function renderCart(){
     <div class="${TW.cart}">
       <ul class="${TW.lines}">${state.cart.map(l => {
         const p = byId(l.id), key = lineKey(l), unit = unitPrice(l);
-        const max = l.kind==='frasco' ? p.stock - frascoUsed(p.id, key) : DEC_MAX;
-        const note = l.kind==='frasco' ? (l.qty>=max ? `<span class="${TW.alert}">Alcanzaste el stock disponible (${p.stock})</span>` : `Stock disponible, ${p.stock} unidades`) : (l.qty>=DEC_MAX?`<span class="${TW.alert}">Máximo ${DEC_MAX} por tamaño</span>`:'Preparado a mano en 24 horas');
+        const max = maxDe(p, l.kind, l.ml);
+        const note = l.kind==='frasco' ? (l.qty>=max ? `<span class="${TW.alert}">Alcanzaste el stock disponible (${max})</span>` : `Stock disponible, ${max} unidades`) : (l.qty>=max?`<span class="${TW.alert}">Máximo ${max} por tamaño</span>`:'Preparado a mano en 24 horas');
         return `<li class="${TW.line}">
           <div class="${TW.lineImg}">${foto(p, l.kind==='decant'?'decant':'frente', (l.kind==='decant'?'Decant de ':'Frasco de ')+p.nombre+' de '+p.marca)}</div>
-          <div class="${TW.lineInfo}"><p class="${TW.eyebrow}">${esc(p.marca)}</p><h2 class="${TW.lineName}"><a class="${TW.cardNameLink}" href="producto.html?id=${p.id}${l.kind==='decant'?'&formato=decant':''}">${esc(p.nombre)}</a></h2>
+          <div class="${TW.lineInfo}"><p class="${TW.eyebrow}">${esc(p.marca)}</p><h2 class="${TW.lineName}"><a class="${TW.cardNameLink}" href="${urlProducto(p.id, l.kind==='decant')}">${esc(p.nombre)}</a></h2>
             <p class="${TW.small}">${l.kind==='decant'?`Decant ${l.ml} ml · atomizador de vidrio`:`Frasco ${l.ml} ml · ${p.conc}`}</p><p class="${TW.stock}">${note}</p></div>
           <p class="${TW.lineUnit}"><span class="sr-only">Precio unitario </span>${money(unit)}</p>
           <div class="${TW.lineQty}" role="group" aria-label="Cantidad de ${esc(p.nombre)} ${l.ml} ml">
@@ -38,7 +38,7 @@ document.addEventListener('click', async e => {
   if(!t) return;
   if(t.dataset.action==='cart-qty'){
     const l = state.cart.find(x => lineKey(x)===t.dataset.key), p = byId(l.id);
-    const max = l.kind==='frasco' ? p.stock - frascoUsed(p.id, lineKey(l)) : DEC_MAX;
+    const max = maxDe(p, l.kind, l.ml);
     l.qty = Math.min(max, Math.max(1, l.qty + +t.dataset.d));
     save(); updateCartBadge(); renderCart();
     const again = $(`[data-action=cart-qty][data-key="${t.dataset.key}"][data-d="${t.dataset.d}"]`);
