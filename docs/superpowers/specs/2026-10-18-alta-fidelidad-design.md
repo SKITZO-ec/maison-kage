@@ -43,7 +43,7 @@ Estructura del repositorio:
 maison-kage/
   frontend/   páginas, css y js con el diseño actual
   backend/    rutas, servicios, conexión y middleware
-  database/   01_esquema.sql, 02_datos.sql, 03_triggers.sql
+  database/   maisonkage.sql (un solo script con limpieza, tablas, triggers y datos)
   docs/       documentos de diseño
 ```
 
@@ -136,6 +136,8 @@ Siete familias con 10 perfumes cada una dan los 70. Los 12 perfumes actuales se 
 Criterio de aceptación verificable con una consulta SQL: ningún valor de Público, Origen, Familia, Ocasión, Concentración, Ofertas, Novedades, Más vendidos ni Decants tiene menos de 10 perfumes.
 
 ## 7. Modelo de datos
+
+Todo el SQL va en **un solo script**, `database/maisonkage.sql`, como el `Script.txt` de Bases de Datos II. Tiene cuatro secciones en orden, cada una con su comentario: limpieza inicial con `DROP ... IF EXISTS`, tablas con restricciones e índices, triggers y datos de los 70 perfumes con sus presentaciones. Así se puede ejecutar de una vez y repetir sin errores.
 
 Convenciones de Bases de Datos II. Nombre de tabla en singular. Cada tabla tiene un prefijo de 3 letras y sus columnas lo llevan (`Usu_id`, `Usu_correo`). Toda tabla tiene clave primaria. Las claves foráneas conservan el nombre de la clave que referencian. Las relaciones N:N usan tabla intermedia. Palabras reservadas de SQL en mayúsculas, restricciones con nombre y condiciones explícitas, comentarios en español en cada columna, e índices con nombres descriptivos sobre claves foráneas y columnas de búsqueda.
 
