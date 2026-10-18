@@ -6,3 +6,4 @@ const tomar = filtro => { const l = PRODUCTS.filter(p => filtro(p) && !usados.ha
 $('#home-ofertas').innerHTML = tomar(p => p.oferta>0).map(p => card(p)).join('');
 $('#home-novedades').innerHTML = tomar(p => p.novedad).map(p => card(p)).join('');
 $('#home-top').innerHTML = tomar(p => p.top).map(p => card(p)).join('');
+$('#home-vistos').innerHTML = vistosHTML();

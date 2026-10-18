@@ -1,7 +1,7 @@
 /* MAISON KAGE · Ficha de producto
    producto.html?id=khamrah                  ficha del frasco completo
    producto.html?id=khamrah&formato=decant   ficha del decant (apartado propio)
-   Cada ficha tiene una sola decisión de tamaño. */
+   En la ficha de decant cada tamaño se agrega al carrito con un solo clic */
 const p = byId(params.get('id'));
 /* Ficha de decant solo si el perfume tiene decants, y siempre si no tiene frascos */
 const ES_DECANT = !!p && decants(p).length>0 && (params.get('formato') === 'decant' || !frascos(p).length);
@@ -16,21 +16,67 @@ const OCASION_TXT = {'Oficina':'la oficina','Diario':'el día a día','Citas':'c
 const fotoLabel = v => v+' de '+p.nombre+' de '+p.marca;
 let pd;
 if(!p) location.replace('404.html');
-else renderProduct();
+else {
+  /* Si piden el decant de un perfume que no tiene, la dirección pasa a la del frasco */
+  if(params.get('formato')==='decant' && !ES_DECANT) history.replaceState(null, '', urlFrasco(p.id));
+  registrarVisto(p.id);
+  renderProduct();
+}
+
+/* Hasta 4 perfumes parecidos, primero de la misma familia, luego del mismo origen y luego del mismo público */
+function similares(){
+  const puntos = x => (x.familia===p.familia ? 4 : 0) + (x.origen===p.origen ? 2 : 0) + (x.publico===p.publico ? 1 : 0);
+  return PRODUCTS.filter(x => x.id!==p.id && (!ES_DECANT || decants(x).length) && puntos(x)>0)
+    .map((x,i) => [x, puntos(x), i]).sort((a,b) => b[1]-a[1] || a[2]-b[2]).slice(0,4).map(a => a[0]);
+}
+
+/* Botón de un tamaño de decant. Debajo dice cuántos hay ya en el carrito */
+function notaDecant(x){
+  const n = enCarrito(p.id, 'decant', x.ml), max = maxDe(p, 'decant', x.ml), lleno = n >= max;
+  return {lleno, cls: lleno ? TW.decAddNote+' text-red' : TW.decAddNote,
+          txt: lleno ? `Máximo ${max} por tamaño` : n ? `En tu carrito, ${n}` : 'Preparado a mano en 24 horas'};
+}
+function decBtn(x){
+  const nt = notaDecant(x);
+  return `<div><button type="button" class="${TW.decAdd}" data-action="add-decant" data-id="${p.id}" data-ml="${x.ml}" ${nt.lleno?'disabled':''} aria-describedby="dec-n-${x.ml}">
+      <span class="${TW.decAddTop}">Agregar ${x.ml} ml · ${money(x.precio)}</span><span class="${TW.decAddSub}">${DEC_SPRAYS[x.ml] || ''}</span></button>
+    <p class="${nt.cls}" id="dec-n-${x.ml}" aria-live="polite">${nt.txt}</p></div>`;
+}
 
 function renderProduct(){
   pd = {ml: (OPCIONES.find(x => x.ml===5) || OPCIONES[0]).ml, qty: 1};
   document.title = (ES_DECANT ? 'Decant de ' : '') + p.nombre + ' de ' + p.marca + ' | Maison Kage';
-  const related = PRODUCTS.filter(x => x.id!==p.id && (x.familia===p.familia || x.publico===p.publico) && (!ES_DECANT || decants(x).length)).slice(0,4);
   const views = ES_DECANT ? ['Decant en atomizador','Decant junto al frasco original','Etiqueta y sello Maison Kage']
                           : ['Frasco de frente','Frasco de perfil','Caja original'];
   /* nombre del archivo de cada vista dentro de img/productos */
   const files = ES_DECANT ? ['decant-atomizador','decant','decant-etiqueta'] : ['frente','perfil','caja'];
   const cr = TW.crumb;
-  /* Opción tipo radio: recuadro que se pinta de azul noche al elegirlo */
-  const opt = (name, ml, on, price, extra) => `<label class="${TW.opt}"><input type="radio" name="${name}" value="${ml}" class="${TW.optInput}" ${on?'checked':''}><span class="${TW.optBox}"><strong class="${TW.optStrong}">${ml} ml</strong><small class="${TW.optSmall}">${price}</small>${extra?`<em class="${TW.optEm}">${extra}</em>`:''}</span></label>`;
-  const sizes = `<fieldset class="${TW.opts}"><legend class="${TW.optsLegend}">Tamaño</legend>${OPCIONES.map(x=>opt('pd-ml', x.ml, x.ml===pd.ml, money(precioFinal(p,x)), ES_DECANT ? DEC_SPRAYS[x.ml] : '')).join('')}</fieldset>`;
+  /* Opción tipo radio, recuadro que se pinta de azul noche al elegirlo */
+  const opt = (name, ml, on, price) => `<label class="${TW.opt}"><input type="radio" name="${name}" value="${ml}" class="${TW.optInput}" ${on?'checked':''}><span class="${TW.optBox}"><strong class="${TW.optStrong}">${ml} ml</strong><small class="${TW.optSmall}">${price}</small></span></label>`;
+  const sizes = OPCIONES.length > 1
+    ? `<fieldset class="${TW.opts}"><legend class="${TW.optsLegend}">Tamaño</legend>${OPCIONES.map(x=>opt('pd-ml', x.ml, x.ml===pd.ml, money(precioFinal(p,x)))).join('')}</fieldset>`
+    : `<p class="${TW.presFija}">Frasco ${OPCIONES[0].ml} ml</p>`;
+  const compra = ES_DECANT ? `
+        <h2 class="${TW.optsLegend} mt-6">Elige el tamaño y se agrega a tu carrito</h2>
+        <div class="${TW.decAddGrid}" id="dec-btns">${OPCIONES.map(decBtn).join('')}</div>
+        <div class="${TW.pdActions}">${favBtn(p, true)}</div>` : `
+        ${sizes}
+        <div class="${TW.qtyRow}">
+          <span class="${TW.label}" id="pd-qty-lbl">Cantidad</span>
+          <div class="${TW.stepper}" role="group" aria-labelledby="pd-qty-lbl">
+            <button class="${TW.stepperBtn}" type="button" data-action="pd-qty" data-d="-1" aria-label="Restar una unidad">−</button>
+            <output class="${TW.stepperOut}" id="pd-qty" aria-live="polite">1</output>
+            <button class="${TW.stepperBtn}" type="button" data-action="pd-qty" data-d="1" aria-label="Sumar una unidad">+</button>
+          </div>
+          <p class="${TW.stock}" id="pd-stock" aria-live="polite"></p>
+        </div>
+        <div class="${TW.pdActions}">
+          <button type="button" class="${TW.pdBtnOutline}" data-action="pd-add" id="pd-add">Agregar al carrito</button>
+          <button type="button" class="${TW.pdBtnGold}" data-action="pd-buy" id="pd-buy">Comprar ahora</button>
+          ${favBtn(p, true)}
+        </div>`;
   const ocasiones = p.ocasion.map(o => `<li><a class="${TW.tagLink}" href="catalogo.html?ocasion=${encodeURIComponent(o)}" aria-label="Ver perfumes para ${OCASION_TXT[o]||o}">${o}</a></li>`).join('');
+  const ds = decants(p);
 
   $('#app').innerHTML = `
     <nav aria-label="Migas de pan"><ol class="${TW.crumbs}">
@@ -51,25 +97,11 @@ function renderProduct(){
         <p class="${TW.eyebrow}">${esc(p.marca)} · ${ES_DECANT ? 'Decant' : 'Perfume '+ORIGENES[p.origen].toLowerCase()}</p>
         <h1 class="${TW.pdName}">${esc(p.nombre)}</h1>
         <p class="${TW.pdMeta}">${ES_DECANT ? `Decant de ${p.conc} · Atomizador de vidrio` : `${p.conc} · ${PUBLICOS[p.publico]} · ${FAMILIAS[p.familia]}`}</p>
-        <div class="${TW.pdPrice}">
+        ${ES_DECANT ? `<p class="${TW.priceLg}">Desde ${money(ds[0].precio)}</p>` : `<div class="${TW.pdPrice}">
           <span class="${TW.priceLg}" id="pd-price"></span>
-          ${!ES_DECANT && p.oferta ? `<s class="${TW.priceOld}" id="pd-old"></s><span class="${TW.sealInline}" aria-label="Oferta, ${p.oferta} por ciento de descuento">-${p.oferta}%</span>` : ''}
-        </div>
-        ${sizes}
-        <div class="${TW.qtyRow}">
-          <span class="${TW.label}" id="pd-qty-lbl">Cantidad</span>
-          <div class="${TW.stepper}" role="group" aria-labelledby="pd-qty-lbl">
-            <button class="${TW.stepperBtn}" type="button" data-action="pd-qty" data-d="-1" aria-label="Restar una unidad">−</button>
-            <output class="${TW.stepperOut}" id="pd-qty" aria-live="polite">1</output>
-            <button class="${TW.stepperBtn}" type="button" data-action="pd-qty" data-d="1" aria-label="Sumar una unidad">+</button>
-          </div>
-          <p class="${TW.stock}" id="pd-stock" aria-live="polite"></p>
-        </div>
-        <div class="${TW.pdActions}">
-          <button type="button" class="${TW.pdBtnOutline}" data-action="pd-add" id="pd-add">Agregar al carrito</button>
-          <button type="button" class="${TW.pdBtnGold}" data-action="pd-buy" id="pd-buy">Comprar ahora</button>
-          ${favBtn(p, true)}
-        </div>
+          ${p.oferta ? `<s class="${TW.priceOld}" id="pd-old"></s><span class="${TW.sealInline}" aria-label="Oferta, ${p.oferta} por ciento de descuento">-${p.oferta}%</span>` : ''}
+        </div>`}
+        ${compra}
         <div class="${TW.pdOcc}"><h2 class="${TW.miniTitle}">Ocasión de uso</h2><ul class="${TW.tags}">${ocasiones}</ul></div>
         <ul class="${TW.perks}">
           <li class="${TW.perk}">${ICON.truck} Envío ${money(SHIP)}, gratis desde ${money(FREE_SHIP)}, o retiro gratis en Quito</li>
@@ -77,22 +109,13 @@ function renderProduct(){
           <li class="${TW.perk}">${ICON.check} Pago con tarjeta o con Deuna</li>
         </ul>
         ${ES_DECANT && frascos(p).length ? `<p class="${TW.crossLink}">¿Te gustó? <a class="underline font-semibold" href="${urlFrasco(p.id)}">Ver el frasco completo de ${esc(p.nombre)}</a></p>` : ''}
+        <p class="${TW.small} mt-4">¿Quieres que dure más en tu piel? <a class="underline" href="ayuda.html#modo-uso">Mira cómo aplicarlo</a>.</p>
       </div>
     </div>
 
-    <section class="${TW.tabsWrap}" aria-label="Información del perfume">
-      <div class="${TW.tabList}" role="tablist">
-        <button type="button" class="${TW.tab}" role="tab" id="tab-desc" aria-selected="true" aria-controls="panel-desc" data-action="tab">Descripción</button>
-        <button type="button" class="${TW.tab}" role="tab" id="tab-uso" aria-selected="false" aria-controls="panel-uso" tabindex="-1" data-action="tab">Modo de uso</button>
-      </div>
-      <div class="${TW.tabPanel}" role="tabpanel" id="panel-desc" aria-labelledby="tab-desc" tabindex="0">
-        <p>${esc(p.desc)}</p>
-      </div>
-      <div class="${TW.tabPanel}" role="tabpanel" id="panel-uso" aria-labelledby="tab-uso" tabindex="0" hidden>
-        <p>${USO_CONC[p.conc] || ''}</p>
-        <ol class="${TW.usoList}">${USO_PASOS.map(x=>`<li>${x}</li>`).join('')}</ol>
-        <p class="${TW.usoNote}">Si compras un decant, cada atomización equivale a una del frasco. El decant de 5 ml rinde ${DEC_SPRAYS[5].replace('≈','unas').replace('atomizaciones','aplicaciones')}, suficiente para probarlo varios días.</p>
-      </div>
+    <section class="${TW.descWrap}" aria-labelledby="h-desc">
+      <h2 class="${TW.sectionTitle}" id="h-desc"><span>Descripción</span></h2>
+      <p>${esc(p.desc)}</p>
     </section>
 
     <div class="${TW.pdDetails}">
@@ -105,11 +128,11 @@ function renderProduct(){
       </section>
       <section aria-labelledby="h-acordes">
         <h2 class="${TW.sectionTitle}" id="h-acordes"><span>Acordes principales</span></h2>
-        <ul class="${TW.accords}">${p.acordes.map(([n,v])=>`<li class="${TW.accord}"><span>${n}</span><span class="${TW.meter}" role="img" aria-label="${n}, intensidad ${v} de 100"><span class="${TW.meterFill} w-[${v}%]"></span></span></li>`).join('')}</ul>
+        <ul class="${TW.accords}">${p.acordes.map(([n,v])=>`<li class="${TW.accord}"><span>${n}</span><span class="${TW.meter}" role="img" aria-label="${n}, intensidad ${v} de 100"><span class="${TW.meterFill}" style="width:${v}%"></span></span></li>`).join('')}</ul>
       </section>
     </div>
 
-    ${ES_DECANT || !decants(p).length ? '' : `
+    ${ES_DECANT || !ds.length ? '' : `
     <section class="${TW.decantBand}" aria-labelledby="h-dec">
       <div class="${TW.decGrid}">
         <div>
@@ -120,7 +143,7 @@ function renderProduct(){
         </div>
         <div class="${TW.decAsk}">
           <h3 class="${TW.decAskTitle}">¿No estás seguro?</h3>
-          <p>Pruébalo desde <strong>${money(decants(p)[0].precio)}</strong> antes de comprar el frasco. Hay decants de ${decants(p).map(x=>x.ml).join(', ').replace(/, (\d+)$/, ' y $1')} ml.</p>
+          <p>Pruébalo desde <strong>${money(ds[0].precio)}</strong> antes de comprar el frasco. Hay decants de ${ds.map(x=>x.ml).join(', ').replace(/, (\d+)$/, ' y $1')} ml.</p>
           <a class="${TW.btnNavy} mt-4" href="${urlDecant(p.id)}">Ver el decant</a>
         </div>
       </div>
@@ -128,32 +151,37 @@ function renderProduct(){
 
     <section class="${TW.block}" aria-labelledby="h-rel">
       <h2 class="${TW.sectionTitle}" id="h-rel"><span>${ES_DECANT ? 'Otros decants que te pueden gustar' : 'También te puede gustar'}</span></h2>
-      <div class="${TW.grid}">${related.map(x => card(x, ES_DECANT ? 'decant' : '')).join('')}</div>
-    </section>`;
+      <div class="${TW.grid}">${similares().map(x => card(x, ES_DECANT ? 'decant' : '')).join('')}</div>
+    </section>
+    ${vistosHTML(p.id)}`;
   $$('input[name=pd-ml]').forEach(i => i.addEventListener('change', e => { pd.ml = +e.target.value; pd.qty = 1; updatePD(); }));
-  updatePD();
+  if(!ES_DECANT) updatePD();
 }
 
-/* Cuántos decants de un tamaño ya están en el carrito (máximo DEC_MAX por tamaño) */
+/* Refresca los botones de decant sin volver a dibujarlos, así el foco no se pierde */
+function actualizarDecants(){
+  OPCIONES.forEach(x => {
+    const b = $(`#dec-btns [data-ml="${x.ml}"]`), nota = $('#dec-n-'+x.ml), nt = notaDecant(x);
+    if(!b) return;
+    b.disabled = nt.lleno; nota.className = nt.cls; nota.textContent = nt.txt;
+  });
+}
+document.addEventListener('mk:carrito', () => { if(p && ES_DECANT) actualizarDecants(); });
+
 function updatePD(){
   const pres = presOf(p, KIND, pd.ml);
   const avail = maxDe(p, KIND, pd.ml) - enCarrito(p.id, KIND, pd.ml);
   if(pd.qty > Math.max(avail,1)) pd.qty = Math.max(avail,1);
   $('#pd-price').textContent = `${money(precioFinal(p, pres))} · ${pd.ml} ml`;
-  if(!ES_DECANT && p.oferta) $('#pd-old').innerHTML = `<span class="sr-only">Precio anterior </span>${money(pres.precio)}`;
+  if(p.oferta) $('#pd-old').innerHTML = `<span class="sr-only">Precio anterior </span>${money(pres.precio)}`;
   $('#pd-qty').textContent = pd.qty;
   const [minus, plus] = $$('[data-action=pd-qty]');
   minus.disabled = pd.qty<=1; plus.disabled = pd.qty>=avail;
   const st = $('#pd-stock');
-  if(ES_DECANT){
-    st.className = avail<=0 ? TW.stockAlert : TW.stock;
-    st.textContent = avail<=0 ? `Ya tienes ${DEC_MAX} decants de ${pd.ml} ml en tu carrito, el máximo por tamaño.` : 'Preparado a mano en 24 horas';
-  } else {
-    st.className = avail<=3 ? TW.stockAlert : TW.stock;
-    st.innerHTML = pres.stock===0 ? `Frasco de ${pd.ml} ml agotado.${decants(p).length?` <a class="underline" href="${urlDecant(p.id)}">Pruébalo en decant</a>`:''}` :
-      avail<=0 ? `Ya tienes en tu carrito las ${pres.stock} unidades disponibles.` :
-      avail<=5 ? `Quedan ${avail} ${avail===1?'unidad':'unidades'}` : 'Disponible';
-  }
+  st.className = avail<=3 ? TW.stockAlert : TW.stock;
+  st.innerHTML = pres.stock===0 ? `Frasco de ${pd.ml} ml agotado.${decants(p).length?` <a class="underline" href="${urlDecant(p.id)}">Pruébalo en decant</a>`:''}` :
+    avail<=0 ? `Ya tienes en tu carrito las ${pres.stock} unidades disponibles.` :
+    avail<=5 ? `Quedan ${avail} ${avail===1?'unidad':'unidades'}` : 'Disponible';
   $('#pd-add').disabled = $('#pd-buy').disabled = avail<=0;
 }
 
@@ -161,7 +189,6 @@ document.addEventListener('click', e => {
   const t = e.target.closest('[data-action]');
   if(!t || !p) return;
   const a = t.dataset.action;
-  if(a==='tab') selectTab(t);
   if(a==='thumb'){
     $$('[data-action=thumb]').forEach(b => b.setAttribute('aria-pressed', b===t));
     $('#pd-main').innerHTML = foto(p, t.dataset.foto, fotoLabel(t.dataset.view));
@@ -174,21 +201,4 @@ document.addEventListener('click', e => {
       else { pd.qty = 1; updatePD(); }
     }
   }
-});
-
-/* Pestañas Descripción y Modo de uso: clic, flechas izquierda y derecha, Inicio y Fin */
-function selectTab(tab, focus=false){
-  $$('[role=tab]').forEach(t => {
-    const on = t===tab;
-    t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
-    document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
-  });
-  if(focus) tab.focus();
-}
-document.addEventListener('keydown', e => {
-  const t = e.target.closest?.('[role=tab]');
-  if(!t) return;
-  const tabs = $$('[role=tab]'), i = tabs.indexOf(t);
-  const next = {ArrowRight: tabs[(i+1)%tabs.length], ArrowLeft: tabs[(i-1+tabs.length)%tabs.length], Home: tabs[0], End: tabs[tabs.length-1]}[e.key];
-  if(next){ e.preventDefault(); selectTab(next, true); }
 });

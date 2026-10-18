@@ -100,9 +100,9 @@ function card(p, modo=''){
     <p class="${TW.cardMeta}">${PUBLICOS[p.publico]} · ${p.conc}</p>`;
   const body = dec ? `
     <p class="${TW.price}"><small class="${TW.priceFrom}">Decant desde </small>${money(ds[0].precio)}</p>
-    <p class="${TW.decSizes}" aria-label="Tamaños disponibles ${ds.map(x=>x.ml).join(', ')} mililitros">${ds.map(x=>`<span class="${TW.decSize}">${x.ml} ml</span>`).join('')}</p>
+    <div class="${TW.decSizes}" role="group" aria-label="Agregar un decant al carrito">${ds.map(x=>`<button type="button" class="${TW.decSizeBtn}" data-action="add-decant" data-id="${p.id}" data-ml="${x.ml}" aria-label="Agregar decant de ${x.ml} ml de ${esc(p.nombre)} al carrito, ${money(x.precio)}">${x.ml} ml</button>`).join('')}</div>
     ${f0 ? `<p class="${TW.cardDec}">Frasco ${f0.ml} ml ${agotado ? 'agotado' : 'desde '+money(precioFinal(p,f0))}</p>` : ''}
-    <a class="${TW.cardBtn}" href="${url}" aria-label="Elegir tamaño de decant de ${esc(p.nombre)}">Elegir tamaño</a>` : `
+    <a class="${TW.cardBtn}" href="${url}" aria-label="Ver el decant de ${esc(p.nombre)}">Ver el decant</a>` : `
     <p class="${TW.price}">${money(precioDesde(p))}${p.oferta && f0?`<s class="${TW.priceOld}"><span class="sr-only">Precio anterior </span>${money(f0.precio)}</s>`:''}<small class="${TW.priceUnit}">${f0 ? f0.ml+' ml' : 'decant'}</small></p>
     ${ds.length && f0 ? `<p class="${TW.cardDec}">${ICON.drop} Decant desde ${money(ds[0].precio)}</p>` : ''}
     <a class="${TW.cardBtn}" href="${url}" aria-label="Ver detalle de ${esc(p.nombre)}">Ver detalle</a>`;
@@ -145,6 +145,7 @@ function addToCart(id, kind, ml, qty, silent=false){
   }
   if(line) line.qty += qty; else state.cart.push({id, kind, ml, qty});
   save(); updateCartBadge();
+  document.dispatchEvent(new CustomEvent('mk:carrito'));
   if(!silent) toast(`Agregado al carrito: ${p.nombre}, ${kind==='decant'?'decant ':'frasco '}${ml} ml`, {link:['Ver carrito','carrito.html']});
   return true;
 }
@@ -421,6 +422,7 @@ document.addEventListener('click', async e => {
     toast(`Número de guía ${fmtGuia(g)} copiado.`);
     return;
   }
+  if(a==='add-decant'){ addToCart(t.dataset.id, 'decant', +t.dataset.ml, 1); return; }
   if(a==='back'){ history.length>1 ? history.back() : (location.href='index.html'); return; }
   if(a==='focus-field'){ document.getElementById(t.dataset.target)?.focus(); return; }
   if(a==='fav'){
