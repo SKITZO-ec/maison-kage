@@ -548,7 +548,8 @@ document.addEventListener('click', async e => {
   }
 });
 
-/* Buscador de la barra superior */
+/* Buscador de la barra superior con sugerencias de nombres y marcas */
+$('#sugerencias').innerHTML = [...new Set(PRODUCTS.flatMap(p => [p.nombre, p.marca]))].sort((a,b)=>a.localeCompare(b,'es')).map(v => `<option value="${esc(v)}"></option>`).join('');
 $('#search-form').addEventListener('submit', e => {
   e.preventDefault();
   location.href = 'buscar.html?q=' + encodeURIComponent($('#q').value.trim());
