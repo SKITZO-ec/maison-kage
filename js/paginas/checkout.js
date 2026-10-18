@@ -126,6 +126,8 @@ function payCard(data){
      }}],
     {onCancel:() => { clearTimeout(timer); toast('Pago cancelado. Tu carrito sigue intacto.'); }});
   $('#card-form').addEventListener('submit', e => { e.preventDefault(); $('#gw-pay').click(); });
+  /* El botón Pagar está fuera del formulario, por eso Enter en cualquier campo también paga */
+  $('#card-form').addEventListener('keydown', e => { if(e.key==='Enter' && e.target.matches('input')){ e.preventDefault(); $('#gw-pay').click(); } });
   $('#cd-num').focus();
 }
 
