@@ -4,7 +4,7 @@
    con sus ocasiones, notas, acordes y presentaciones
    ========================================================= */
 import { Router } from 'express';
-import { pool } from '../bd.js';
+import { ErrorUsuario } from '../reglas.js';
 
 const CONSULTA = `
 SELECT json_build_object(
@@ -38,16 +38,29 @@ SELECT json_build_object(
   FROM Producto P
   JOIN Marca M ON M.Mar_id = P.Mar_id
   JOIN Familia F ON F.Fam_id = P.Fam_id
- WHERE P.Pro_activo
- ORDER BY P.Pro_id`;
+ WHERE P.Pro_activo`;
 
-export async function leerProductos(){
-  const { rows } = await pool.query(CONSULTA);
+/* Sin slug trae todo el catálogo, con slug trae solo ese perfume */
+export async function leerProductos(pool, slug){
+  const filtro = slug === undefined ? '' : ' AND P.Pro_slug = $1';
+  const { rows } = await pool.query(`${CONSULTA}${filtro} ORDER BY P.Pro_id`, slug === undefined ? [] : [slug]);
   return rows.map(r => r.producto);
 }
 
-export const productos = Router();
+export function rutasProductos(pool){
+  const router = Router();
 
-productos.get('/productos', async (req, res, next) => {
-  try{ res.json(await leerProductos()); }catch(e){ next(e); }
-});
+  router.get('/productos', async (req, res, next) => {
+    try{ res.json(await leerProductos(pool)); }catch(e){ next(e); }
+  });
+
+  router.get('/productos/:slug', async (req, res, next) => {
+    try{
+      const [perfume] = await leerProductos(pool, req.params.slug);
+      if (!perfume) throw new ErrorUsuario('No encontramos ese perfume.', 404);
+      res.json(perfume);
+    }catch(e){ next(e); }
+  });
+
+  return router;
+}

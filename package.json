@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite --host --port 5173",
     "start": "node backend/servidor.js",
-    "test": "tailwindcss -c tests/soporte/tailwind.cjs -o tests/.tw.css --minify && playwright test",
+    "bd": "node herramientas/preparar-bd.mjs",
+    "bd:prueba": "node herramientas/preparar-bd.mjs --prueba",
+    "test:api": "node herramientas/preparar-bd.mjs --prueba && node --test \"tests/api/*.test.mjs\"",
+    "test:web": "tailwindcss -c tests/soporte/tailwind.cjs -o tests/.tw.css --minify && playwright test",
+    "test": "npm run test:api && npm run test:web",
     "sql": "node herramientas/generar-sql.mjs"
   },
   "devDependencies": {

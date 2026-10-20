@@ -6,9 +6,10 @@ module.exports = defineConfig({
   timeout: 30000,
   fullyParallel: true,
   reporter: [['list']],
-  webServer: { command: 'python3 -m http.server 4173', port: 4173, reuseExistingServer: true, stdout: 'ignore', stderr: 'ignore' },
+  globalSetup: './tests/soporte/preparar.cjs',
+  webServer: { command: 'node backend/servidor.js --prueba', port: 4174, reuseExistingServer: true, stdout: 'ignore', stderr: 'ignore' },
   use: {
-    baseURL: 'http://localhost:4173/',
+    baseURL: 'http://localhost:4174/',
     launchOptions: { executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }
   },
   projects: [
