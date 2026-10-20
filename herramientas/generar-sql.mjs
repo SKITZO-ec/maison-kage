@@ -531,8 +531,11 @@ const cabecera = `-- =========================================================
 SET client_encoding = 'UTF8';
 `;
 
+/* Con --sin-datos se genera solo la estructura en la ruta indicada */
+const sinDatos = process.argv.indexOf('--sin-datos');
+const destino = sinDatos >= 0 ? process.argv[sinDatos + 1] : raiz + 'database/maisonkage.sql';
 const sql = [cabecera, limpieza, tablas, '-- Comentarios de tablas y columnas\n' + comentarios(tablas) + '\n', triggers,
-  'BEGIN;\n' + lineas.join('\n') + '\nCOMMIT;\n', permisos].join('\n');
-fs.mkdirSync(raiz + 'database', { recursive: true });
-fs.writeFileSync(raiz + 'database/maisonkage.sql', sql);
-console.log('database/maisonkage.sql generado con', PRODUCTS.length, 'perfumes');
+  sinDatos >= 0 ? '' : 'BEGIN;\n' + lineas.join('\n') + '\nCOMMIT;\n', permisos].join('\n');
+if(sinDatos < 0) fs.mkdirSync(raiz + 'database', { recursive: true });
+fs.writeFileSync(destino, sql);
+console.log(destino, sinDatos >= 0 ? 'generado sin datos' : `generado con ${PRODUCTS.length} perfumes`);
