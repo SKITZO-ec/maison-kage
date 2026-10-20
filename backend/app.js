@@ -7,16 +7,20 @@ import express from 'express';
 import { rutasProductos } from './rutas/productos.js';
 import { rutasSitio } from './rutas/sitio.js';
 import { rutasCuenta } from './rutas/cuenta.js';
+import { rutasRecuperar } from './rutas/recuperar.js';
+import { rutasPrueba } from './rutas/prueba.js';
+import { crearCorreo } from './correo.js';
 import { ErrorUsuario } from './reglas.js';
 import { cabeceras, csrf, limitador } from './seguridad.js';
 import { leerSesion } from './sesion.js';
 
 const ERRORES_CONEXION = ['ECONNREFUSED', '3D000', '28P01', '57P03'];
 
-export function crearApp({ pool, config }){
+export function crearApp({ pool, config, correo = crearCorreo(config) }){
   const app = express();
   app.disable('x-powered-by');
   app.locals.config = config;
+  app.locals.correo = correo;
 
   app.use(cabeceras());
   app.use(csrf());
@@ -28,6 +32,9 @@ export function crearApp({ pool, config }){
 
   app.use('/api', rutasProductos(pool));
   app.use('/api', rutasCuenta(pool));
+  app.use('/api', rutasRecuperar(pool, config, correo));
+  /* La bandeja de pruebas solo se expone en modo de pruebas */
+  if (config.nodeEnv === 'test') app.use('/api', rutasPrueba(correo));
   /* Una ruta de la API que no existe no debe caer en la página 404 */
   app.use('/api', (req, res) => res.status(404).json({ error: 'No encontramos lo que buscas.' }));
   app.use(rutasSitio(pool));

@@ -5,13 +5,15 @@
    ========================================================= */
 import { cargarConfig } from '../../backend/config.js';
 import { crearPool } from '../../backend/bd.js';
+import { crearCorreo } from '../../backend/correo.js';
 import { crearApp } from '../../backend/app.js';
 
 export async function iniciarApp(opciones = {}){
   const base = cargarConfig(['--prueba']);
   const config = { ...base, ...opciones, bd: { ...base.bd, ...opciones.bd } };
   const pool = crearPool(config.bd);
-  const app = crearApp({ pool, config });
+  const correo = crearCorreo(config);
+  const app = crearApp({ pool, config, correo });
   const servidor = await new Promise((resolver, rechazar) => {
     const s = app.listen(0, () => resolver(s));
     s.once('error', rechazar);
@@ -21,6 +23,7 @@ export async function iniciarApp(opciones = {}){
   return {
     base: url,
     pool,
+    correo,
     async cerrar(){
       servidor.closeAllConnections();
       await new Promise(r => servidor.close(r));
