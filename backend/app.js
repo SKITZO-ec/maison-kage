@@ -6,7 +6,10 @@
 import express from 'express';
 import { rutasProductos } from './rutas/productos.js';
 import { rutasSitio } from './rutas/sitio.js';
+import { rutasCuenta } from './rutas/cuenta.js';
 import { ErrorUsuario } from './reglas.js';
+import { cabeceras, csrf, limitador } from './seguridad.js';
+import { leerSesion } from './sesion.js';
 
 const ERRORES_CONEXION = ['ECONNREFUSED', '3D000', '28P01', '57P03'];
 
@@ -15,7 +18,16 @@ export function crearApp({ pool, config }){
   app.disable('x-powered-by');
   app.locals.config = config;
 
+  app.use(cabeceras());
+  app.use(csrf());
+  app.use('/api', express.json({ limit: '100kb' }));
+  app.use('/api', leerSesion(pool));
+
+  /* Cada ruta con intentos limitados lleva su propio contador por IP */
+  for (const ruta of ['/login', '/registro', '/recuperar']) app.post('/api' + ruta, limitador(config.limiteIntentos));
+
   app.use('/api', rutasProductos(pool));
+  app.use('/api', rutasCuenta(pool));
   /* Una ruta de la API que no existe no debe caer en la página 404 */
   app.use('/api', (req, res) => res.status(404).json({ error: 'No encontramos lo que buscas.' }));
   app.use(rutasSitio(pool));
@@ -26,6 +38,8 @@ export function crearApp({ pool, config }){
       console.error(err.message);
       return res.status(503).json({ error: 'No pudimos conectarnos con la base de datos. Intenta de nuevo en un momento.' });
     }
+    if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'No pudimos leer los datos enviados.' });
+    if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Los datos enviados son demasiado grandes.' });
     if (err instanceof ErrorUsuario) return res.status(err.status).json({ error: err.message });
     if (err.code === 'P0001') return res.status(400).json({ error: err.message });
     console.error(err);

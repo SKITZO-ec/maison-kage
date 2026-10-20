@@ -39,3 +39,17 @@ test('el logo y las imágenes cargan', async ({ page }) => {
   expect(await page.locator('header img').first().evaluate(i => i.naturalWidth)).toBeGreaterThan(0);
   expect(fallidas).toEqual([]);
 });
+
+test('la política de seguridad no bloquea nada y las fotos que faltan se quitan', async ({ page }) => {
+  const csp = [];
+  page.on('console', m => { if (/content security policy|refused to/i.test(m.text())) csp.push(m.text()); });
+  const r = await page.goto('catalogo.html');
+  expect(r.headers()['content-security-policy']).toContain("script-src 'self' https://cdn.tailwindcss.com");
+  await expect(page.locator('#app')).not.toBeEmpty();
+  // Las fotos de los perfumes llegan en la Fase 3, las que ya intentaron cargar y fallaron deben haberse quitado
+  await expect.poll(() => page.locator('img[data-foto]').evaluateAll(l => l.filter(i => i.complete && i.naturalWidth === 0 && i.currentSrc).length)).toBe(0);
+  await page.goto('index.html');
+  await page.waitForLoadState('load');
+  expect(csp).toEqual([]);
+  expect(page.erroresConsola).toEqual([]);
+});

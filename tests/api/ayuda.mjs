@@ -33,6 +33,9 @@ export function cliente(base){
   const cookies = new Map();
 
   async function enviar(metodo, ruta, cuerpo){
+    /* El servidor deja la cookie mk_csrf en cualquier petición, así que la primera
+       que no sea GET empieza con un GET para que el CSRF ya esté disponible */
+    if (metodo !== 'GET' && !cookies.has('mk_csrf')) await enviar('GET', '/api/yo');
     const cabeceras = {};
     if (cookies.size) cabeceras.Cookie = [...cookies].map(([k, v]) => `${k}=${v}`).join('; ');
     if (cookies.has('mk_csrf')) cabeceras['X-CSRF'] = cookies.get('mk_csrf');

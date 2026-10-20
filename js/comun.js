@@ -69,8 +69,16 @@ function fotoError(img){
   img.dataset.ext = n;
   img.src = img.src.replace(/\.[a-z]+$/, '.' + FOTO_EXT[n]);
 }
+/* El evento error no sube por el árbol, por eso se escucha en la fase de captura.
+   Reemplaza los onerror en línea, que la política de seguridad del servidor bloquea */
+document.addEventListener('error', e => {
+  const img = e.target;
+  if(!(img instanceof HTMLImageElement)) return;
+  if(img.hasAttribute('data-foto')) fotoError(img);
+  else if(img.hasAttribute('data-quitar')) img.remove();
+}, true);
 function foto(p, vista, label, variant='ph', decorative=false){
-  const img = `<img class="${TW.phImg}" src="${fotoSrc(p, vista)}" alt="" loading="lazy" decoding="async" onerror="fotoError(this)">`;
+  const img = `<img class="${TW.phImg}" src="${fotoSrc(p, vista)}" alt="" loading="lazy" decoding="async" data-foto>`;
   return ph(label, variant, decorative).replace(/<\/div>$/, img + '</div>');
 }
 
