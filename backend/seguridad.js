@@ -46,7 +46,8 @@ const iguales = (a, b) => {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 
-/* Doble envío. La cookie mk_csrf la lee el JavaScript de la página y la manda en X-CSRF */
+/* Express compara las rutas sin distinguir mayúsculas, así que /API/x también cuenta como API.
+   Doble envío. La cookie mk_csrf la lee el JavaScript de la página y la manda en X-CSRF */
 export function csrf(){
   return (req, res, next) => {
     let token = leerCookies(req).mk_csrf;
@@ -55,7 +56,7 @@ export function csrf(){
       res.cookie('mk_csrf', token, { httpOnly: false, sameSite: 'lax', secure: req.secure, path: '/' });
     }
     const escribe = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
-    if (escribe && req.path.startsWith('/api')){
+    if (escribe && /^\/api(\/|$)/i.test(req.path)){
       const enviado = req.get('X-CSRF');
       if (!enviado || !leerCookies(req).mk_csrf || !iguales(enviado, token)){
         return res.status(403).json({ error: 'Tu sesión de seguridad venció. Recarga la página e intenta de nuevo.' });

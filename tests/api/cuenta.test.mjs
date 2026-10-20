@@ -152,6 +152,13 @@ test('un POST sin X-CSRF responde 403', async () => {
   assert.equal(mal.status, 403);
 });
 
+test('una escritura bajo /API o /Api sin X-CSRF también responde 403', async () => {
+  for (const [metodo, ruta] of [['POST', '/API/logout'], ['POST', '/Api/login'], ['PATCH', '/Api/yo'], ['PUT', '/aPi/yo/clave'], ['DELETE', '/API/x']]){
+    const r = await fetch(app.base + ruta, { method: metodo, headers: { 'Content-Type': 'application/json' }, body: metodo === 'DELETE' ? undefined : '{}' });
+    assert.equal(r.status, 403, `${metodo} ${ruta}`);
+  }
+});
+
 test('logout borra la fila de Sesion y la cookie anterior ya no da usuario', async () => {
   const api = cliente(app.base);
   const d = datos();
