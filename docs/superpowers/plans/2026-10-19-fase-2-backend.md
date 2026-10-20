@@ -63,7 +63,7 @@
 ### Task 1: Separar la app, base de pruebas y primeras pruebas de la API
 
 **Files:**
-- Create: `backend/config.js`, `backend/app.js`, `backend/rutas/sitio.js`, `herramientas/preparar-bd.mjs`, `tests/api/ayuda.mjs`, `tests/api/productos.test.mjs`, `tests/soporte/preparar.cjs`
+- Create: `backend/config.js`, `backend/app.js`, `backend/reglas.js`, `backend/rutas/sitio.js`, `herramientas/preparar-bd.mjs`, `tests/api/ayuda.mjs`, `tests/api/productos.test.mjs`, `tests/soporte/preparar.cjs`
 - Modify: `backend/servidor.js`, `backend/bd.js`, `backend/rutas/productos.js`, `playwright.config.js`, `package.json`, `.env.ejemplo`
 
 **Interfaces:**
@@ -71,18 +71,19 @@
 - Produces: `crearApp({ pool, config }) -> express.Application`.
 - Produces: `crearPool(configBd) -> pg.Pool` y `transaccion(pool, fn: (cliente) => Promise<T>) -> Promise<T>` con `BEGIN`, `COMMIT` y `ROLLBACK` si `fn` lanza.
 - Produces: `prepararBd(configBd)` exportada por `herramientas/preparar-bd.mjs`. Se conecta a la base `postgres`, crea la de destino si no existe y ejecuta `database/maisonkage.sql` completo en una sola consulta.
-- Produces: `iniciarApp(opciones?) -> Promise<{ base: string, cerrar(): Promise<void>, pool }>` y `cliente(base) -> { get, post, put, patch, del }` en `tests/api/ayuda.mjs`. Cada método devuelve `{ status, cuerpo }`, guarda las cookies y manda `X-CSRF` con el valor de la cookie `mk_csrf`.
+- Produces: `iniciarApp(opciones?) -> Promise<{ base: string, cerrar(): Promise<void>, pool }>`. `opciones` se mezcla sobre la configuración de `--prueba`, por ejemplo `{ limiteIntentos: 5 }` o `{ bd: { database: 'no_existe_mk' } }`. y `cliente(base) -> { get, post, put, patch, del }` en `tests/api/ayuda.mjs`. Cada método devuelve `{ status, cuerpo }`, guarda las cookies y manda `X-CSRF` con el valor de la cookie `mk_csrf`.
 
 - [ ] **Step 1: Write the failing tests** en `tests/api/productos.test.mjs`
   - `GET /api/productos` responde 200 con 70 elementos, y el de `khamrah` tiene `pres.length === 5`.
   - `GET /api/productos/khamrah` responde 200 con `nombre === 'Khamrah'`.
   - `GET /api/productos/no-existe` responde 404 con `error === 'No encontramos ese perfume.'`.
   - `GET /.env`, `/backend/app.js`, `/database/maisonkage.sql`, `/tests/.tw.css` y `/package.json` responden 404.
-  - Con un pool apuntando a la base `no_existe_mk`, `GET /api/productos` responde 503 con `error === 'No pudimos conectarnos con la base de datos. Intenta de nuevo en un momento.'` y el cuerpo no contiene `postgres` ni `at `.
+  - Una consulta sobre la base de pruebas devuelve 70 en `Producto`, y ninguna de las 27 categorías de la consulta de la sección 6 de `maisonkage.sql` tiene menos de 10 perfumes.
+  - Con `iniciarApp({ bd: { database: 'no_existe_mk' } })`, `GET /api/productos` responde 503 con `error === 'No pudimos conectarnos con la base de datos. Intenta de nuevo en un momento.'` y el cuerpo no contiene `postgres` ni `at `.
 
 - [ ] **Step 2: Run** `node --test tests/api/` y confirmar que falla porque `tests/api/ayuda.mjs` y `backend/app.js` no existen.
 
-- [ ] **Step 3: Implement** la separación. `servidor.js` queda en `cargarConfig(process.argv)`, `crearPool`, `crearApp(...).listen`. Las rutas de páginas, `js/productos.js`, `/js`, `/source` y `/plantillas` pasan a `backend/rutas/sitio.js`. El manejador de errores de `app.js` responde 503 con el mensaje anterior cuando el error tiene un código de conexión de pg (`ECONNREFUSED`, `3D000`, `28P01`, `57P03`), 400 con `err.message` cuando `err.code === 'P0001'` o el error es `ErrorUsuario`, y 500 "Algo salió mal. Intenta de nuevo." en cualquier otro caso. Exportar `class ErrorUsuario extends Error { constructor(mensaje, status = 400) }` desde `backend/reglas.js`.
+- [ ] **Step 3: Implement** la separación. `servidor.js` queda en `cargarConfig(process.argv)`, `crearPool`, `crearApp(...).listen`. Las rutas de páginas, `js/productos.js`, `/js`, `/source` y `/plantillas` pasan a `backend/rutas/sitio.js`. El manejador de errores de `app.js` responde 503 con el mensaje anterior cuando el error tiene un código de conexión de pg (`ECONNREFUSED`, `3D000`, `28P01`, `57P03`), 400 con `err.message` cuando `err.code === 'P0001'` o el error es `ErrorUsuario`, y 500 "Algo salió mal. Intenta de nuevo." en cualquier otro caso. Crear `backend/reglas.js` con `class ErrorUsuario extends Error { constructor(mensaje, status = 400) }`. La Tarea 2 completa ese archivo.
 
 - [ ] **Step 4: Configurar los scripts.** En `package.json`, `"start": "node backend/servidor.js"`, `"bd": "node herramientas/preparar-bd.mjs"`, `"bd:prueba": "node herramientas/preparar-bd.mjs --prueba"`, `"test:api": "node herramientas/preparar-bd.mjs --prueba && node --test tests/api/"`, `"test:web": "tailwindcss -c tests/soporte/tailwind.cjs -o tests/.tw.css --minify && playwright test"`, `"test": "npm run test:api && npm run test:web"`. En `playwright.config.js`, `globalSetup: './tests/soporte/preparar.cjs'`, `webServer: { command: 'node backend/servidor.js --prueba', port: 4174, reuseExistingServer: true }` y `baseURL: 'http://localhost:4174/'`. Quitar el servidor de Python.
 
@@ -95,8 +96,8 @@
 ### Task 2: Registro, login, logout y perfil en la API
 
 **Files:**
-- Create: `backend/reglas.js` (completar), `backend/seguridad.js`, `backend/sesion.js`, `backend/rutas/cuenta.js`, `tests/api/cuenta.test.mjs`, `tests/api/reglas.test.mjs`
-- Modify: `backend/app.js`, `package.json` (dependencias `bcryptjs`, `helmet`, `express-rate-limit`)
+- Create: `backend/seguridad.js`, `backend/sesion.js`, `backend/rutas/cuenta.js`, `tests/api/cuenta.test.mjs`, `tests/api/reglas.test.mjs`
+- Modify: `backend/reglas.js`, `backend/app.js`, `package.json` (dependencias `bcryptjs`, `helmet`, `express-rate-limit`)
 
 **Interfaces:**
 - Consumes: `crearApp`, `transaccion`, `ErrorUsuario` de la Tarea 1.
@@ -115,7 +116,7 @@
   - Logout borra la fila de `Sesion`, y la cookie anterior ya no da usuario en `GET /api/yo`.
   - Cambiar el correo sin `claveActual` o con una equivocada responde 400 "La contraseña actual no es correcta.". Con la correcta cambia y el login con el correo nuevo funciona.
   - `PUT /api/yo/clave` con la actual equivocada responde 400. Con la correcta, el login con la nueva funciona.
-  - Con `crearApp` y `limiteIntentos: 5`, el sexto `POST /api/login` en 15 minutos responde 429 "Demasiados intentos, espera unos minutos".
+  - Con `iniciarApp({ limiteIntentos: 5 })`, el sexto `POST /api/login` en 15 minutos responde 429 "Demasiados intentos, espera unos minutos".
   - En `tests/api/reglas.test.mjs`, `SHIP`, `FREE_SHIP`, `DEC_MAX` y `CIUDADES` son iguales a los de `js/datos.js` (cargado con `vm`).
 
 - [ ] **Step 2: Run** `npm run test:api` y confirmar que fallan por rutas inexistentes (404).
@@ -232,9 +233,10 @@
   - **Concurrencia.** Dos usuarios con `khamrah frasco 100 x1` en el carrito y el stock de esa presentación puesto en 1 por SQL. Los dos `POST /api/pedidos` se lanzan con `Promise.all`. Uno responde 201, el otro 400 con "No hay stock suficiente de Khamrah 100 ml" o "Solo quedan 0 ...", y el stock final es 0.
   - Se agrega un correo a la bandeja para `correo` con el número del pedido, el total y, en envío, la guía y los tres pasos para rastrearla.
   - `GET /api/pedidos/:numero` de otro usuario responde 404.
+  - Como en la Fase 1, después del primer pedido con envío la cuenta sin teléfono ni direcciones queda con `Usu_telefono` igual al del pedido y una `Direccion` principal con alias "Principal". Si ya tenía teléfono o direcciones, no se cambian.
 
 - [ ] **Step 2: Run** y confirmar que fallan.
-- [ ] **Step 3: Implement** `crearPedido(pool, usuario, datos) -> Promise<pedido>` en una sola `transaccion`, en este orden. Leer el carrito, `SELECT ... FROM Presentacion WHERE Pre_id = ANY($1) FOR UPDATE`, verificar cada línea y lanzar `ErrorUsuario('Solo quedan N <tipo> de <perfume> <ml> ml.')` si no alcanza, insertar `Pedido`, `PedidoItem` con `precioFinal` calculado en el servidor, `Pago`, `Envio` con una guía de 12 dígitos al azar si es envío, borrar las líneas del carrito. Enviar el correo después del `COMMIT`.
+- [ ] **Step 3: Implement** `crearPedido(pool, usuario, datos) -> Promise<pedido>` en una sola `transaccion`, en este orden. Leer el carrito, `SELECT ... FROM Presentacion WHERE Pre_id = ANY($1) FOR UPDATE`, verificar cada línea y lanzar `ErrorUsuario('Solo quedan N <tipo> de <perfume> <ml> ml.')` si no alcanza, insertar `Pedido`, `PedidoItem` con `precioFinal` calculado en el servidor, `Pago`, `Envio` con una guía de 12 dígitos al azar si es envío (12 y no 10 como dice la especificación, porque `fmtGuia()` y las pruebas de la Fase 1 ya usan 12), guardar teléfono y primera dirección si faltan, borrar las líneas del carrito. Enviar el correo después del `COMMIT`.
 - [ ] **Step 4: Run** `npm run test:api`. Esperado: pasa, y la prueba de concurrencia pasa 5 veces seguidas (`node --test --test-name-pattern=Concurrencia tests/api/` repetido).
 - [ ] **Step 5: Commit** `"Agregar pedidos con transacción y correo de confirmación"`.
 
@@ -251,7 +253,7 @@
 - Consumes: las rutas de cuenta, favoritos y direcciones.
 - Produces: `/js/sesion.js` responde con `Cache-Control: no-store` el script `const SESION = { usuario: {nombre, apellido, correo, telefono} | null, favoritos: [slug], direcciones: [direccion] };`. Si `Sec-Fetch-Site` es `cross-site`, responde la versión sin sesión.
 - Produces en `js/api.js`: `api(metodo, ruta, cuerpo?) -> Promise<any>`. Agrega `X-CSRF` leído de `document.cookie`, lanza `Error(cuerpo.error)` cuando la respuesta no es 2xx y `Error('No pudimos conectarnos. Revisa tu internet e intenta de nuevo.')` si `fetch` falla.
-- Produces en `js/estado.js`: `state = { cart, favs, user }` donde `user` y `favs` vienen de `SESION`. `save()` guarda solo `cart`, `orders`, `lastOrder` y `orderSeq` en `sessionStorage` (los pedidos pasan a la base en la Tarea 9). Desaparecen `accounts`, `hashPass`, `passOk` y `newAccount`.
+- Produces en `js/estado.js`: `state = { cart, favs, user, orders, lastOrder, orderSeq }` donde `user` y `favs` vienen de `SESION`. `save()` guarda solo `cart`, `orders`, `lastOrder` y `orderSeq` en `sessionStorage` (los pedidos pasan a la base en la Tarea 9). Desaparecen `accounts`, `hashPass`, `passOk` y `newAccount`.
 - Produces: `currentUser()` devuelve `SESION.usuario` con `email` como alias de `correo`, `tel` como alias de `telefono` y `addresses` como `SESION.direcciones`, para que `checkout.js` y `perfil.js` sigan leyendo los mismos nombres.
 - Produces en `tests/soporte/fixtures.js`: `cuentaNueva(page, datos?) -> Promise<{ correo, clave }>` registra por la API con un correo único (`ana+<aleatorio>@correo.com`) usando `page.request`, que comparte las cookies con la página. También `entrar(page, correo, clave)`.
 
@@ -282,6 +284,7 @@
 **Interfaces:**
 - Consumes: `api()`, `currentUser()`, `GET /api/_prueba/correos`.
 - Produces: `recuperar.html?codigo=<hex>` muestra el formulario de clave nueva (`#rc-nueva`, `#rc-repetir`) en lugar del de correo.
+- Produces: Direcciones muestra "Cargando tus direcciones…" mientras espera y, si la API falla, el mensaje con un botón "Reintentar".
 
 - [ ] **Step 1: Write the failing tests** en `tests/e2e/cuenta.spec.js`
   - Cambiar el nombre en el perfil y recargar muestra el nombre nuevo.
@@ -289,6 +292,7 @@
   - Agregar dos direcciones, marcar la segunda como principal y recargar muestra "Principal" solo en la segunda.
   - Recuperar completo. Pedir el enlace, leer el correo con `page.request.get('/api/_prueba/correos?para=...')`, abrir el enlace, poner la clave nueva dos veces, ver "Tu contraseña se cambió. Ya puedes iniciar sesión." y entrar con la nueva.
   - Las dos claves distintas muestran "Las contraseñas no coinciden." sin llamar a la API.
+  - Con `page.route('**/api/direcciones', r => r.fulfill({ status: 503, ... }))`, Direcciones muestra el error y el botón "Reintentar".
 - [ ] **Step 2: Run** y confirmar que fallan.
 - [ ] **Step 3: Implement.** Después de guardar en el perfil o en direcciones se vuelve a pedir `GET /api/yo` o `GET /api/direcciones` y se redibuja, sin recargar la página, conservando el foco donde lo deja hoy la Fase 1. Mientras espera la respuesta, el botón de enviar queda con `aria-disabled="true"` y el texto "Guardando…".
 - [ ] **Step 4: Run** `npm run test:web`. Esperado: todo pasa.
@@ -307,14 +311,14 @@
 - Produces: `SESION.carrito` con las líneas guardadas cuando hay sesión. Con sesión, cada cambio del carrito (agregar, cambiar cantidad, quitar, deshacer) se aplica primero a `state.cart` y luego se envía completo con `PUT /api/carrito`. Si el servidor devuelve otra cosa, `state.cart` toma la respuesta y se redibuja.
 - Produces: al entrar o registrarse, si hay líneas en el carrito sin sesión, se envían a `POST /api/carrito/fusionar` y luego se borran de `sessionStorage`.
 - Produces: `confirmacion.html?n=MK-000001` carga el pedido con `GET /api/pedidos/:numero`. `estado.js` deja de tener `orders`, `lastOrder` y `orderSeq`.
-- Produces: `tests/soporte/fixtures.js` agrega `carritoCon(page, lineas)`, que deja el carrito con sesión por la API.
+- Produces: `tests/soporte/fixtures.js` agrega `carritoCon(page, lineas)`, que deja el carrito con sesión por la API, y `ponerStock(page, id, kind, ml, stock)`, que llama a `POST /api/_prueba/stock { id, kind, ml, stock }`. Esa ruta se agrega a `backend/rutas/prueba.js` y, como las demás de ese archivo, solo existe con `nodeEnv === 'test'`.
 
 - [ ] **Step 1: Write the failing tests** en `tests/e2e/pedido.spec.js`
   - Agregar khamrah decant 5 ml sin sesión, entrar con una cuenta y ver ese decant en el carrito. Recargar y sigue ahí.
   - Pagar con tarjeta lleva a `confirmacion.html?n=MK-` y muestra el número. `pedidos.html` lo lista con su estado.
   - Mis pedidos muestra "Cargando tus pedidos…" mientras espera y, si `/api/pedidos` responde 503 (simulado con `page.route`), muestra el mensaje y un botón "Reintentar" que vuelve a pedir la lista.
   - Doble clic rápido en Pagar crea un solo pedido.
-  - Si entre agregar y pagar otro cliente compró la última unidad (stock puesto en 0 por `page.request` a una ruta de prueba o por SQL desde la prueba), el checkout muestra el mensaje del servidor en `#co-errors` y no navega.
+  - Si entre agregar y pagar otro cliente compró la última unidad (simulado con `ponerStock(page, 'asad', 'decant', 5, 0)` después de llenar el carrito), el checkout muestra el mensaje del servidor en `#co-errors` y no navega.
 - [ ] **Step 2: Run** y confirmar que fallan.
 - [ ] **Step 3: Implement.** En `checkout.js`, `createOrder` pasa a `POST /api/pedidos` y navega a `confirmacion.html?n=<num>`. Los dos caminos de Deuna mandan `verificacion` (falso al aprobar, verdadero con "Ya pagué y no se actualiza"). El botón de pagar queda con `aria-disabled="true"` mientras espera. En `pedidos.js`, "Listo para retirar" usa `TW.statusCamino`. La fecha se muestra con `toLocaleDateString('es-EC', {day:'numeric', month:'short', year:'numeric'})`.
 - [ ] **Step 4: Migrar las pruebas** que usan `state.lastOrder`, `state.orders` o compran. **Stock en las pruebas.** Toda prueba que completa una compra compra decants de 5 ml de un perfume que ninguna otra prueba usa para revisar límites (asad), salvo la de teclado, que sigue comprando Khamrah 50 ml. Así se compran como máximo 3 frascos de Khamrah 50 ml por corrida, uno por ancho. Las pruebas que revisan límites calculan el valor esperado con `maxDe(byId(id), kind, ml)` en lugar de escribir el 6 fijo.
@@ -327,13 +331,13 @@
 
 **Files:**
 - Move: `js/productos.js` a `herramientas/catalogo.js`
-- Modify: `herramientas/generar-sql.mjs` (leer la ruta nueva), `backend/rutas/sitio.js`, `js/comun.js`, `tests/e2e/humo.spec.js`
+- Modify: `herramientas/generar-sql.mjs` (leer la ruta nueva), `backend/rutas/sitio.js`, `js/comun.js`, `tests/e2e/humo.spec.js`, `tests/api/productos.test.mjs`
 
 **Interfaces:**
 - Produces: si la base falla, `/js/productos.js` responde 200 con `const PRODUCTS = null;`. `js/comun.js` revisa `PRODUCTS === null` antes de cualquier otra cosa, y en ese caso pone en `#app` "No pudimos cargar los perfumes" con un botón "Reintentar" que recarga la página, y no ejecuta el resto del arranque.
 
 - [ ] **Step 1: Write the failing tests**
-  - `fetch('/js/productos.js')` desde el servidor no tiene relación con ningún archivo del repositorio. Se prueba borrando la expectativa. `herramientas/catalogo.js` existe, `js/productos.js` no existe en disco y `/js/productos.js` sigue respondiendo los 70.
+  - En `tests/api/productos.test.mjs`, `fs.existsSync('js/productos.js')` es falso, `herramientas/catalogo.js` existe y `GET /js/productos.js` sigue respondiendo un script con los 70 perfumes.
   - Con `page.route('**/js/productos.js', r => r.fulfill({ body: 'const PRODUCTS = null;', contentType: 'text/javascript' }))`, `index.html` muestra "No pudimos cargar los perfumes", el botón "Reintentar" recibe el foco con Tab y no hay errores de JavaScript en consola.
 - [ ] **Step 2: Run** y confirmar que fallan.
 - [ ] **Step 3: Implement** con `git mv`. `npm run sql` vuelve a generar un `maisonkage.sql` idéntico al actual (comprobar con `git diff --exit-code database/maisonkage.sql`).
