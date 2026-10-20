@@ -5,12 +5,18 @@
   "description": "Prototipo de alta fidelidad Maison Kage",
   "scripts": {
     "dev": "vite --host --port 5173",
-    "start": "vite --host --port 5173",
-    "test": "tailwindcss -c tests/soporte/tailwind.cjs -o tests/.tw.css --minify && playwright test"
+    "start": "node backend/servidor.js",
+    "test": "tailwindcss -c tests/soporte/tailwind.cjs -o tests/.tw.css --minify && playwright test",
+    "sql": "node herramientas/generar-sql.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "tailwindcss": "^3.4.17",
     "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
   }
 }
