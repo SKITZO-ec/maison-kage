@@ -8,6 +8,8 @@ import { rutasProductos } from './rutas/productos.js';
 import { rutasSitio } from './rutas/sitio.js';
 import { rutasCuenta } from './rutas/cuenta.js';
 import { rutasRecuperar } from './rutas/recuperar.js';
+import { rutasDirecciones } from './rutas/direcciones.js';
+import { rutasFavoritos } from './rutas/favoritos.js';
 import { rutasPrueba } from './rutas/prueba.js';
 import { crearCorreo } from './correo.js';
 import { ErrorUsuario } from './reglas.js';
@@ -33,6 +35,8 @@ export function crearApp({ pool, config, correo = crearCorreo(config) }){
   app.use('/api', rutasProductos(pool));
   app.use('/api', rutasCuenta(pool));
   app.use('/api', rutasRecuperar(pool, config, correo));
+  app.use('/api', rutasDirecciones(pool));
+  app.use('/api', rutasFavoritos(pool));
   /* La bandeja de pruebas solo se expone en modo de pruebas */
   if (config.nodeEnv === 'test') app.use('/api', rutasPrueba(correo));
   /* Una ruta de la API que no existe no debe caer en la página 404 */
