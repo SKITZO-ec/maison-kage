@@ -30,7 +30,10 @@ export function rutasRecuperar(pool, config, correo){
           `INSERT INTO RecuperacionClave (Usu_id, Rec_token_hash, Rec_vence) VALUES ($1, $2, NOW() + interval '30 minutes')`,
           [rows[0].usu_id, sha256(codigo)]);
         const enlace = `${config.urlBase}/recuperar.html?codigo=${codigo}`;
-        await correo.enviar({ para: direccion, ...correoRecuperar(enlace) });
+        /* No se espera el envío a propósito. Un SMTP real tarda cientos de milisegundos y solo
+           ocurre con cuentas registradas, así que esperarlo delataría qué correos existen.
+           enviar nunca lanza y registra sus propios errores */
+        void correo.enviar({ para: direccion, ...correoRecuperar(enlace) });
       }
       /* La respuesta es la misma exista o no la cuenta */
       res.json({ mensaje: MSG_PEDIDO });
