@@ -9,6 +9,8 @@ const test = base.test.extend({
       contentType: 'text/javascript',
       body: "window.tailwind={};document.head.insertAdjacentHTML('beforeend','<link rel=\"stylesheet\" href=\"/tests/.tw.css\">');"
     }));
+    // El CSS se entrega desde el disco, así el servidor no tiene que publicar la carpeta tests
+    await page.route('**/tests/.tw.css', r => r.fulfill({ contentType: 'text/css', path: require('node:path').join(__dirname, '..', '.tw.css') }));
     page.erroresConsola = [];
     page.on('pageerror', e => page.erroresConsola.push(e.message));
     page.on('console', m => {
