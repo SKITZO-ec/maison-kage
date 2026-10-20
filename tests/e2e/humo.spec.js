@@ -29,3 +29,12 @@ test('checkout con carrito carga sin errores', async ({ page }) => {
   await expect(page.locator('#co-form')).toBeVisible();
   expect(page.erroresConsola).toEqual([]);
 });
+
+test('el logo y las imágenes cargan', async ({ page }) => {
+  const fallidas = [];
+  page.on('response', r => { if (r.status() >= 400 && !r.url().includes('/img/productos/')) fallidas.push(r.url()); // las fotos de perfumes llegan en la Fase 3 });
+  await page.goto('index.html');
+  await page.waitForLoadState('load');
+  expect(await page.locator('header img').first().evaluate(i => i.naturalWidth)).toBeGreaterThan(0);
+  expect(fallidas).toEqual([]);
+});

@@ -1,7 +1,7 @@
 /* =========================================================
    MAISON KAGE · Servidor
    Sirve las páginas de la tienda y la API en /api
-   Solo se publican las páginas, js/ y plantillas/, nunca
+   Solo se publican las páginas, js/, source/ y plantillas/, nunca
    el backend, la base de datos ni el archivo .env
    ========================================================= */
 import 'dotenv/config';
@@ -25,6 +25,7 @@ app.get('/js/productos.js', async (req, res, next) => {
 });
 
 app.use('/js', express.static(path.join(raiz, 'js')));
+app.use('/source', express.static(path.join(raiz, 'source')));
 app.use('/plantillas', express.static(path.join(raiz, 'plantillas')));
 app.get(/^\/([a-z0-9-]+\.html)?$/, (req, res) => {
   res.sendFile(path.join(raiz, req.params[0] || 'index.html'));
