@@ -1,11 +1,27 @@
 /* Pruebas de pedidos con transacción, correo y concurrencia */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import pg from 'pg';
 import { iniciarApp, cliente } from './ayuda.mjs';
+import { cargarConfig } from '../../backend/config.js';
+import { prepararBd } from '../../herramientas/preparar-bd.mjs';
 
+/* Estas pruebas cambian stock y productos, por eso corren en su propia base.
+   Así no compiten con los otros archivos que leen el catálogo de maisonkage_test en paralelo */
+const BD_PROPIA = 'maisonkage_test_pedidos';
 let app;
-before(async () => { app = await iniciarApp(); });
-after(async () => { await app.cerrar(); });
+before(async () => {
+  const base = cargarConfig(['--prueba']).bd;
+  await prepararBd({ ...base, database: BD_PROPIA });
+  app = await iniciarApp({ bd: { database: BD_PROPIA } });
+});
+after(async () => {
+  await app.cerrar();
+  const { database, ...conexion } = cargarConfig(['--prueba']).bd;
+  const admin = new pg.Client({ ...conexion, database: 'postgres' });
+  await admin.connect();
+  try{ await admin.query(`DROP DATABASE IF EXISTS "${BD_PROPIA}" WITH (FORCE)`); }finally{ await admin.end(); }
+});
 
 let n = 0;
 async function conSesion(telefono = '0991234567'){
@@ -173,6 +189,7 @@ test('valida los campos del cuerpo y no toca el carrito si falla', async () => {
 test('si el stock no alcanza responde el mensaje con N y no cambia nada', async () => {
   const api = await conSesion();
   await llenar(api, linea('khamrah', 'decant', 5, 3));
+  const original = await stockDe('khamrah', 'decant', 5);
   await fijarStock('khamrah', 'decant', 5, 2);
   try{
     const r = await api.post('/api/pedidos', datos({ correo: api.correo }));
@@ -184,7 +201,7 @@ test('si el stock no alcanza responde el mensaje con N y no cambia nada', async 
     assert.equal(await stockDe('khamrah', 'decant', 5), 0);
     assert.equal((await api.get('/api/carrito')).cuerpo.length, 1);
   }finally{
-    await fijarStock('khamrah', 'decant', 5, 40);
+    await fijarStock('khamrah', 'decant', 5, original);
   }
 });
 
@@ -206,6 +223,7 @@ test('Concurrencia: dos pedidos por la última unidad, uno gana y el otro recibe
   const b = await conSesion();
   await llenar(a, linea('khamrah', 'frasco', 100, 1));
   await llenar(b, linea('khamrah', 'frasco', 100, 1));
+  const original = await stockDe('khamrah', 'frasco', 100);
   await fijarStock('khamrah', 'frasco', 100, 1);
   try{
     const [ra, rb] = await Promise.all([
@@ -218,7 +236,7 @@ test('Concurrencia: dos pedidos por la última unidad, uno gana y el otro recibe
     assert.match(perdedor.cuerpo.error, /^(No hay stock suficiente de Khamrah 100 ml|Solo quedan 0 .*|Ya no quedan unidades de Khamrah 100 ml\.)/);
     assert.equal(await stockDe('khamrah', 'frasco', 100), 0);
   }finally{
-    await fijarStock('khamrah', 'frasco', 100, 3);
+    await fijarStock('khamrah', 'frasco', 100, original);
   }
 });
 
