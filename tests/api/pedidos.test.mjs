@@ -342,3 +342,32 @@ test('el primer pedido con envío guarda el celular y la dirección Principal si
   assert.deepEqual((await ret.get('/api/direcciones')).cuerpo, []);
   void api;
 });
+
+test('la ruta de prueba de stock cambia una presentación y revisa los datos', async () => {
+  const api = cliente(app.base);
+  const r = await api.post('/api/_prueba/stock', { id: 'naxos', kind: 'decant', ml: 5, stock: 0 });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.cuerpo, { id: 'naxos', kind: 'decant', ml: 5, stock: 0 });
+  assert.equal(await stockDe('naxos', 'decant', 5), 0);
+  assert.equal((await api.post('/api/_prueba/stock', { id: 'naxos', kind: 'decant', ml: 5, stock: 40 })).status, 200);
+  assert.equal(await stockDe('naxos', 'decant', 5), 40);
+
+  const noExiste = await api.post('/api/_prueba/stock', { id: 'naxos', kind: 'decant', ml: 7, stock: 1 });
+  assert.equal(noExiste.status, 404);
+  assert.equal(noExiste.cuerpo.error, 'No existe esa presentación.');
+  for (const malo of [{ id: 'naxos', kind: 'decant', ml: 5, stock: -1 }, { id: 'naxos', kind: 'otro', ml: 5, stock: 1 }, { id: 'naxos', kind: 'decant', ml: '5', stock: 1 }, {}]){
+    const x = await api.post('/api/_prueba/stock', malo);
+    assert.equal(x.status, 400, JSON.stringify(malo));
+    assert.equal(x.cuerpo.error, 'Datos de stock no válidos.');
+  }
+});
+
+test('fuera del modo de pruebas la ruta de stock no existe', async () => {
+  const otra = await iniciarApp({ nodeEnv: 'development', bd: { database: BD_PROPIA } });
+  try{
+    const r = await cliente(otra.base).post('/api/_prueba/stock', { id: 'naxos', kind: 'decant', ml: 5, stock: 0 });
+    assert.equal(r.status, 404);
+    assert.ok(r.cuerpo.error);
+  }finally{ await otra.cerrar(); }
+  assert.equal(await stockDe('naxos', 'decant', 5), 40);
+});

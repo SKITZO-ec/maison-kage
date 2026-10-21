@@ -25,7 +25,7 @@ test('sin sesión responde el script con usuario null y sin guardar en caché', 
   assert.match(r.cabeceras.get('content-type'), /javascript/);
   assert.equal(r.cabeceras.get('cache-control'), 'no-store');
   assert.match(r.cuerpo, /usuario: null/);
-  assert.deepEqual(leer(r.cuerpo), { usuario: null, favoritos: [], direcciones: [] });
+  assert.deepEqual(leer(r.cuerpo), { usuario: null, favoritos: [], direcciones: [], carrito: [] });
 });
 
 test('con sesión trae el usuario, los favoritos y las direcciones', async () => {
@@ -45,6 +45,15 @@ test('con sesión trae el usuario, los favoritos y las direcciones', async () =>
   assert.equal(s.direcciones.length, 1);
   assert.equal(s.direcciones[0].alias, 'Casa');
   assert.equal(s.direcciones[0].principal, true);
+});
+
+test('con sesión trae el carrito guardado tal como está en la base', async () => {
+  const api = await conSesion();
+  assert.equal((await api.put('/api/carrito', { lineas: [{ id: 'asad', kind: 'decant', ml: 5, qty: 2 }, { id: 'khamrah', kind: 'frasco', ml: 50, qty: 1 }] })).status, 200);
+  const s = leer((await api.get('/js/sesion.js')).cuerpo);
+  assert.deepEqual(s.carrito, [{ id: 'asad', kind: 'decant', ml: 5, qty: 2 }, { id: 'khamrah', kind: 'frasco', ml: 50, qty: 1 }]);
+  const otro = leer((await api.get('/js/sesion.js', { 'Sec-Fetch-Site': 'cross-site' })).cuerpo);
+  assert.deepEqual(otro.carrito, []);
 });
 
 test('una petición de otro sitio recibe la versión sin sesión', async () => {

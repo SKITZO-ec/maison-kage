@@ -42,7 +42,7 @@ export function crearApp({ pool, config, correo = crearCorreo(config) }){
   app.use('/api', rutasCarrito(pool));
   app.use('/api', rutasPedidos(pool));
   /* La bandeja de pruebas solo se expone en modo de pruebas */
-  if (config.nodeEnv === 'test') app.use('/api', rutasPrueba(correo));
+  if (config.nodeEnv === 'test') app.use('/api', rutasPrueba(correo, pool));
   /* Una ruta de la API que no existe no debe caer en la página 404 */
   app.use('/api', (req, res) => res.status(404).json({ error: 'No encontramos lo que buscas.' }));
   app.use(rutasSitio(pool));
