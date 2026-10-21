@@ -681,4 +681,5 @@ updateCartBadge();
 markNav();
 abrirDetallesDelEnlace();
 showFlash();
-if(currentUser()) aplicarFavoritoPendiente();
+/* Sin catálogo no se toca el favorito pendiente, así sigue guardado para el siguiente intento */
+if(currentUser() && !CATALOGO_CAIDO) aplicarFavoritoPendiente();

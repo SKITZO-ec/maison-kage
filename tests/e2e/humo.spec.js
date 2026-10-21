@@ -59,16 +59,30 @@ test.describe('si la base falla', () => {
     await page.route('**/js/productos.js', r => r.fulfill({ body: 'const PRODUCTS = null;', contentType: 'text/javascript' }));
   });
 
-  for (const url of ['index.html', 'catalogo.html', 'producto.html?id=khamrah', 'buscar.html?q=vainilla', 'favoritos.html', 'carrito.html', 'login.html'])
+  // Las 14 páginas con script propio, con sesión iniciada para que ninguna redirija
+  const CON_SCRIPT = ['index', 'catalogo', 'buscar', 'producto.html?id=khamrah', 'carrito', 'checkout', 'confirmacion', 'login', 'registro', 'recuperar', 'perfil', 'direcciones', 'favoritos', 'pedidos'];
+  for (const p of CON_SCRIPT) {
+    const url = p.includes('.html') ? p : `${p}.html`;
     test(`${url} muestra el aviso con Reintentar y no da errores`, async ({ page }) => {
+      await cuentaNueva(page);
       await page.goto(url);
-      const aviso = page.locator('#app [role="alert"]');
-      await expect(aviso).toContainText('No pudimos cargar los perfumes');
+      await expect(page.locator('#app [role="alert"]')).toContainText('No pudimos cargar los perfumes');
       await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible();
       await expect(page.locator('header').first()).toBeVisible();
       await expect(page.locator('footer').first()).toBeVisible();
       expect(page.erroresConsola).toEqual([]);
     });
+  }
+
+  test('el favorito pendiente no se pierde mientras el catálogo está caído', async ({ page }) => {
+    await cuentaNueva(page);
+    await page.goto('login.html');
+    await page.evaluate(() => sessionStorage.setItem('mk-fav-pendiente', 'khamrah'));
+    await page.goto('index.html');
+    await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible();
+    expect(await page.evaluate(() => sessionStorage.getItem('mk-fav-pendiente'))).toBe('khamrah');
+    expect(page.erroresConsola).toEqual([]);
+  });
 
   test('Reintentar se alcanza con Tab y vuelve a cargar la página', async ({ page }) => {
     await page.goto('index.html');

@@ -18,6 +18,15 @@ const raiz = path.resolve(import.meta.dirname, '..', '..');
    U+2028 y U+2029 se escapan igual para que ningún navegador viejo los lea como salto de línea */
 const enScript = valor => JSON.stringify(valor).replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
+/* Si la base falla en /js/sesion.js se responde 200 con la sesión vacía, igual que con productos.js.
+   Un error HTTP dejaría el script roto y la consola llena de errores */
+function sesionVacia(res, e){
+  console.error('No se pudo leer la sesión', e.message);
+  if (res.headersSent) return;
+  res.type('application/javascript').set('Cache-Control', 'no-store')
+     .send('/* Sesión leída del servidor */\nconst SESION = {\n  usuario: null,\n  favoritos: [],\n  direcciones: [],\n  carrito: []\n};\n');
+}
+
 export function rutasSitio(pool){
   const router = Router();
 
@@ -38,7 +47,7 @@ export function rutasSitio(pool){
   /* La sesión que leen todas las páginas, con la cuenta, sus favoritos, sus direcciones y su carrito.
      Nunca se guarda en caché porque cambia al entrar o salir. Si la pide otro sitio
      se le da la versión sin sesión, así no puede leer los datos con una etiqueta script */
-  router.get('/js/sesion.js', leerSesion(pool), async (req, res, next) => {
+  router.get('/js/sesion.js', leerSesion(pool), async (req, res) => {
     try{
       const u = req.get('Sec-Fetch-Site') === 'cross-site' ? null : req.usuario;
       const [favoritos, direcciones, carrito] = u
@@ -47,8 +56,8 @@ export function rutasSitio(pool){
       const usuario = u ? { nombre: u.nombre, apellido: u.apellido, correo: u.correo, telefono: u.telefono ?? null } : null;
       res.type('application/javascript').set('Cache-Control', 'no-store')
          .send(`/* Sesión leída del servidor */\nconst SESION = {\n  usuario: ${enScript(usuario)},\n  favoritos: ${enScript(favoritos)},\n  direcciones: ${enScript(direcciones)},\n  carrito: ${enScript(carrito)}\n};\n`);
-    }catch(e){ next(e); }
-  });
+    }catch(e){ sesionVacia(res, e); }
+  }, (err, req, res, next) => sesionVacia(res, err));
 
   router.use('/js', express.static(path.join(raiz, 'js')));
   router.use('/source', express.static(path.join(raiz, 'source')));

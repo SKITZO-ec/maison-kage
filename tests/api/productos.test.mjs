@@ -94,3 +94,14 @@ test('si la base no responde, /js/productos.js da 200 con const PRODUCTS = null;
     assert.equal(cuerpo, 'const PRODUCTS = null;');
   } finally { await sinBd.cerrar(); }
 });
+
+test('si la base no responde, /js/sesion.js da 200 con la sesión vacía aunque llegue una cookie', async () => {
+  const sinBd = await iniciarApp({ bd: { database: 'no_existe_mk' } });
+  try {
+    const { status, cuerpo, cabeceras } = await cliente(sinBd.base).get('/js/sesion.js', { Cookie: 'mk_sesion=cualquiera' });
+    assert.equal(status, 200);
+    assert.match(cabeceras.get('content-type'), /javascript/);
+    assert.equal(cabeceras.get('cache-control'), 'no-store');
+    assert.match(cuerpo, /const SESION = \{\s*usuario: null,\s*favoritos: \[\],\s*direcciones: \[\],\s*carrito: \[\]\s*\};/);
+  } finally { await sinBd.cerrar(); }
+});
