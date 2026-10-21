@@ -202,6 +202,17 @@ Convenciones de Bases de Datos II. Nombre de tabla en singular. Cada tabla tiene
 
 ## 11. Pendientes
 
-- Elegir el hosting y el proveedor del correo (Gmail con contraseña de aplicación o un servicio gratuito como Resend). Se decide en la Fase 2.
-- Imágenes de los perfumes y video del inicio, en la Fase 3.
+Resueltos en la Fase 2
+
+- El correo se resolvió con Gmail y una contraseña de aplicación. Si GMAIL_CLAVE_APP está vacía, el correo se imprime en la consola del servidor, así el sitio funciona igual en desarrollo.
+- La recuperación de contraseña quedó lista, con un código que dura 30 minutos y el mensaje "Si el correo tiene una cuenta, te enviamos un enlace".
+
+Siguen abiertos
+
+- Elegir el hosting donde va a vivir el sitio.
 - Cambiar la contraseña de la base de datos del servidor del amigo al terminar, porque se compartió por chat.
+- Revisar el sitio con red. En este entorno no se pudo comprobar que la política CSP deje pasar el CDN real de Tailwind (script-src permite https://cdn.tailwindcss.com) ni probar un envío real por Gmail. Hay que hacer las dos pruebas una vez antes de publicar.
+
+Para la Fase 3
+
+- Imágenes de los perfumes y video del inicio.
