@@ -62,14 +62,22 @@ export function rutasSitio(pool){
   router.use('/js', express.static(path.join(raiz, 'js')));
   router.use('/source', express.static(path.join(raiz, 'source')));
   router.use('/plantillas', express.static(path.join(raiz, 'plantillas')));
-  router.get(/^\/([a-z0-9-]+\.html)?$/, (req, res) => {
-    res.sendFile(path.join(raiz, req.params[0] || 'index.html'));
+
+  const noEncontrada = res => res.status(404).sendFile(path.join(raiz, '404.html'));
+
+  /* Una página .html que no está en el disco responde la página 404 como cualquier ruta desconocida.
+     Sin esto sendFile pasaba el ENOENT al manejador de errores y salía un 500 */
+  router.get(/^\/([a-z0-9-]+\.html)?$/, (req, res, next) => {
+    res.sendFile(path.join(raiz, req.params[0] || 'index.html'), err => {
+      if (!err) return;
+      if (err.code === 'ENOENT' && !res.headersSent) return noEncontrada(res);
+      next(err);
+    });
   });
 
   /* URLs limpias. La ficha de un perfume solo se entrega si el slug existe y está activo,
      así un perfume que no existe responde 404 de verdad y no una ficha vacía.
      Si la base falla se entrega la ficha igual, y la página muestra el aviso con Reintentar */
-  const noEncontrada = res => res.status(404).sendFile(path.join(raiz, '404.html'));
   router.get('/perfumes/:slug', async (req, res) => {
     const slug = req.params.slug;
     if (!/^[a-z0-9-]+$/.test(slug)) return noEncontrada(res);

@@ -305,3 +305,34 @@ test('el sexto POST /api/login en 15 minutos responde 429', async () => {
     await limitada.cerrar();
   }
 });
+
+test('los logins y registros correctos no gastan los intentos del límite', async () => {
+  const limitada = await iniciarApp({ limiteIntentos: 5 });
+  try{
+    const d = datos();
+    assert.equal((await cliente(limitada.base).post('/api/registro', d)).status, 201);
+    for (let i = 0; i < 5; i++){
+      assert.equal((await cliente(limitada.base).post('/api/registro', datos())).status, 201, `registro ${i + 2}`);
+    }
+    for (let i = 0; i < 6; i++){
+      const r = await cliente(limitada.base).post('/api/login', { correo: d.correo, clave: d.clave });
+      assert.equal(r.status, 200, `login ${i + 1}`);
+    }
+  }finally{
+    await limitada.cerrar();
+  }
+});
+
+test('/api/recuperar sigue contando cada petición aunque responda bien', async () => {
+  const limitada = await iniciarApp({ limiteIntentos: 5 });
+  try{
+    const api = cliente(limitada.base);
+    for (let i = 0; i < 5; i++){
+      assert.equal((await api.post('/api/recuperar', { correo: 'nadie@prueba.com' })).status, 200);
+    }
+    const sexto = await api.post('/api/recuperar', { correo: 'nadie@prueba.com' });
+    assert.equal(sexto.status, 429);
+  }finally{
+    await limitada.cerrar();
+  }
+});

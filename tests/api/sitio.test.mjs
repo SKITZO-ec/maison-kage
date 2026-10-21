@@ -108,3 +108,12 @@ test('/ofertas y /decants responden el catálogo y las direcciones viejas siguen
     assert.match(r.cuerpo, ruta.includes('producto') ? /js\/paginas\/producto\.js/ : /js\/paginas\/catalogo\.js/, ruta);
   }
 });
+
+test('una página .html que no existe responde 404 con la página 404 y no un error 500', async () => {
+  for (const ruta of ['/noexiste.html', '/carito.html']){
+    const r = await cliente(app.base).get(ruta);
+    assert.equal(r.status, 404, ruta);
+    assert.match(r.cabeceras.get('content-type'), /html/, ruta);
+    assert.match(r.cuerpo, /Página no encontrada/, ruta);
+  }
+});

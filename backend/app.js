@@ -31,8 +31,12 @@ export function crearApp({ pool, config, correo = crearCorreo(config) }){
   app.use('/api', express.json({ limit: '100kb' }));
   app.use('/api', leerSesion(pool));
 
-  /* Cada ruta con intentos limitados lleva su propio contador por IP */
-  for (const ruta of ['/login', '/registro', '/recuperar']) app.post('/api' + ruta, limitador(config.limiteIntentos));
+  /* Cada ruta con intentos limitados lleva su propio contador por IP.
+     En login y registro solo cuentan los intentos fallidos. Recuperar cuenta cada petición
+     porque siempre responde lo mismo y así no se puede usar para mandar correos sin parar */
+  app.post('/api/login', limitador(config.limiteIntentos, { soloFallidos: true }));
+  app.post('/api/registro', limitador(config.limiteIntentos, { soloFallidos: true }));
+  app.post('/api/recuperar', limitador(config.limiteIntentos));
 
   app.use('/api', rutasProductos(pool));
   app.use('/api', rutasCuenta(pool));

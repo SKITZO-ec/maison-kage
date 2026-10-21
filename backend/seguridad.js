@@ -66,11 +66,14 @@ export function csrf(){
   };
 }
 
-/* Máximo de peticiones por IP cada 15 minutos */
-export function limitador(maximo){
+/* Máximo de peticiones por IP cada 15 minutos.
+   Con soloFallidos las respuestas correctas no cuentan, así entrar o registrarse bien
+   no gasta intentos y solo se frena a quien prueba claves equivocadas */
+export function limitador(maximo, { soloFallidos = false } = {}){
   return rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: maximo,
+    skipSuccessfulRequests: soloFallidos,
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => res.status(429).json({ error: 'Demasiados intentos, espera unos minutos' })
