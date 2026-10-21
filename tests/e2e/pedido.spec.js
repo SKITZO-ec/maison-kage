@@ -1,7 +1,7 @@
 // Carrito con sesión, pago, confirmación y Mis pedidos guardados en la base
 // Toda compra de este archivo es de decants de 5 ml de Asad, que tiene 40 de stock,
 // así los tres anchos que corren en paralelo sobre la misma base no se quedan sin unidades
-const { test, expect, cuentaNueva, carritoCon, ponerStock } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva, carritoCon, ponerStock, pedidoNuevo } = require('../soporte/fixtures');
 
 const correoUnico = () => `ana+${Date.now()}${Math.random().toString(16).slice(2, 8)}@correo.com`;
 const carritoGuardado = async page => (await page.request.get('/api/carrito')).json();
@@ -181,4 +181,56 @@ test('volver a iniciar sesión con la sesión abierta no duplica el carrito de l
   await page.waitForLoadState('load');
   expect(await carritoGuardado(page)).toEqual([{ id: 'asad', kind: 'decant', ml: 5, qty: 2 }]);
   await expect(page.locator('#cart-count')).toHaveText('2');
+});
+
+/* Retrasa el primer PUT /api/carrito, así si la página navega sin esperarlo
+   el checkout lee de /js/sesion.js el carrito de antes */
+async function retrasarCarrito(page, ms = 800) {
+  let primero = true;
+  await page.route('**/api/carrito', async r => {
+    if (primero && r.request().method() === 'PUT') { primero = false; await new Promise(f => setTimeout(f, ms)); }
+    await r.continue().catch(() => {});
+  });
+}
+
+test('si el pedido ya se hizo en otra pestaña pagar muestra el carrito vacío', async ({ page }) => {
+  await cuentaNueva(page);
+  await carritoCon(page, [['asad', 'decant', 5, 1]]);
+  await abrirPagoConTarjeta(page);
+  /* La otra pestaña termina la compra con el mismo carrito y el servidor lo deja vacío */
+  await pedidoNuevo(page);
+  await page.click('#gw-pay');
+  await expect(page.getByRole('heading', { name: 'Tu carrito está vacío' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('#co-form')).toHaveCount(0);
+  await expect(page.locator('#app aside')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await page.evaluate(() => state.cart)).toEqual([]);
+  await expect(page.locator('#cart-count')).toBeHidden();
+  expect(page.erroresConsola).toEqual([]);
+});
+
+test('Comprar ahora con sesión espera a que el carrito se guarde antes de ir al checkout', async ({ page }) => {
+  await cuentaNueva(page);
+  /* Solo se pone en el carrito, no se compra, así el stock del frasco no cambia */
+  await page.goto('producto.html?id=asad');
+  await retrasarCarrito(page);
+  await page.click('#pd-buy');
+  await expect(page).toHaveURL(/\/checkout\.html$/);
+  await expect(page.locator('#co-form')).toBeVisible();
+  const guardado = await carritoGuardado(page);
+  expect(guardado.map(l => [l.id, l.kind, l.qty])).toEqual([['asad', 'frasco', 1]]);
+  expect(await page.evaluate(() => state.cart.map(l => [l.id, l.kind, l.qty]))).toEqual([['asad', 'frasco', 1]]);
+  await expect(page.locator('#app aside')).toContainText('1 × Asad');
+});
+
+test('Ir al checkout con sesión espera a que el carrito se guarde', async ({ page }) => {
+  await cuentaNueva(page);
+  await carritoCon(page, [['asad', 'decant', 5, 1]]);
+  await page.goto('carrito.html');
+  await retrasarCarrito(page);
+  await page.getByRole('button', { name: 'Sumar una unidad' }).click();
+  await page.getByRole('link', { name: 'Ir al checkout' }).click();
+  await expect(page).toHaveURL(/\/checkout\.html$/);
+  await expect(page.locator('#app aside')).toContainText('2 × Asad');
+  expect(await carritoGuardado(page)).toEqual([{ id: 'asad', kind: 'decant', ml: 5, qty: 2 }]);
 });

@@ -200,7 +200,8 @@ document.addEventListener('click', e => {
   if(a==='pd-qty'){ pd.qty = Math.max(1, pd.qty + +t.dataset.d); updatePD(); }
   if(a==='pd-add' || a==='pd-buy'){
     if(addToCart(p.id, KIND, pd.ml, pd.qty, a==='pd-buy')){
-      if(a==='pd-buy') location.href = '/checkout.html';
+      /* Con sesión el checkout lee el carrito del servidor, por eso se espera a que se guarde */
+      if(a==='pd-buy') irAlCheckout();
       else { pd.qty = 1; updatePD(); }
     }
   }

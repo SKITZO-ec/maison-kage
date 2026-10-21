@@ -138,10 +138,10 @@ function payCard(data){
 }
 
 /* ---------- Pago con Deuna (QR dinámico con confirmación automática) ----------
-   Pensado para que la persona nunca se quede con la duda de si la estafaron:
-   el pedido ya tiene número antes de pagar, el QR muestra monto y comercio,
-   hay tiempo límite visible, pasos que avanzan solos y una salida clara
-   ("Ya pagué y no se actualiza") que deja el pedido guardado en verificación. */
+   Pensado para que la persona nunca se quede con la duda de si la estafaron.
+   El QR muestra el monto y el comercio, el tiempo límite se ve, los pasos avanzan solos
+   y hay una salida clara ("Ya pagué y no se actualiza") que deja el pedido guardado en verificación.
+   El número del pedido lo da el servidor apenas se crea, después del pago */
 function payDeuna(data){
   const t = totals(data.entrega);
   let secs = 600, tick, t1, t2;
@@ -222,6 +222,15 @@ async function createOrder(data, pago){
   }catch(err){
     if(modalCtx) modalCtx.bloqueado = false;
     closeModal();
+    /* Si el carrito de la cuenta ya está vacío, por ejemplo porque la compra se terminó en otra pestaña,
+       el formulario y el resumen ya no sirven. Se muestra el carrito vacío y el foco va a su título */
+    if(err.message==='Tu carrito está vacío.'){
+      state.cart = []; updateCartBadge();
+      $('#app').innerHTML = emptyCartHTML();
+      const h = $('#app h1'); h.tabIndex = -1; h.focus();
+      toast(err.message, {type:'error'});
+      return;
+    }
     const box = $('#co-errors');
     box.innerHTML = `<h2 class="${TW.errSummaryTitle}">No pudimos crear tu pedido</h2><p class="${TW.errSummaryItem}">${esc(err.message)}</p>`;
     box.hidden = false; box.focus();

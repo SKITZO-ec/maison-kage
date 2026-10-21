@@ -112,6 +112,25 @@ function marcarFavorito(id, on){
   $$(`[data-action="fav"][data-id="${id}"]`).forEach(b => { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', `${on?'Quitar':'Guardar'} ${p.nombre} ${on?'de':'en'} favoritos`); });
   document.dispatchEvent(new CustomEvent('mk:favs'));
 }
+/* Guarda en el servidor el favorito que se ve, con un solo envío a la vez por perfume.
+   Si la persona hace clic otra vez mientras va un envío, al terminar se manda el estado nuevo,
+   así un doble clic rápido manda PUT y después DELETE en ese orden y el servidor termina igual que el corazón.
+   Si el servidor falla el corazón vuelve al último estado que sí se guardó */
+const favoritoEnCamino = new Map();
+function guardarFavorito(id, guardado){
+  if(favoritoEnCamino.has(id)) return favoritoEnCamino.get(id);
+  const envio = (async () => {
+    try{
+      while(isFav(id) !== guardado){
+        const on = isFav(id);
+        try{ await api(on ? 'PUT' : 'DELETE', '/api/favoritos/' + encodeURIComponent(id)); guardado = on; }
+        catch(err){ marcarFavorito(id, guardado); toast(err.message, {type:'error'}); return; }
+      }
+    }finally{ favoritoEnCamino.delete(id); }
+  })();
+  favoritoEnCamino.set(id, envio);
+  return envio;
+}
 function favBtn(p, inline=false){
   const on = isFav(p.id);
   return `<button type="button" class="${inline ? TW.favInline : TW.fav}" data-action="fav" data-id="${p.id}" aria-pressed="${on}" aria-label="${on?'Quitar':'Guardar'} ${esc(p.nombre)} ${on?'de':'en'} favoritos">${ICON.heart}</button>`;
@@ -195,6 +214,18 @@ function guardarCarrito(){
   })();
   return carritoEnCamino;
 }
+/* Espera a que termine el envío del carrito que esté en camino. El checkout lee el carrito
+   de la cuenta en /js/sesion.js, por eso antes de ir allá hay que dejar guardado el último cambio */
+const carritoListo = () => carritoEnCamino || Promise.resolve();
+function irAlCheckout(){ carritoListo().then(() => { location.href = '/checkout.html'; }); }
+/* El enlace Ir al checkout sigue siendo un enlace normal. Solo si hay un envío en camino
+   se detiene un momento y navega apenas el servidor guardó el carrito */
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href="/checkout.html"]');
+  if(!a || !carritoEnCamino || e.defaultPrevented || e.button!==0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  irAlCheckout();
+});
 /* entrega: 'envio' (a domicilio) o 'retiro' (en el local, sin costo) */
 function totals(entrega='envio'){
   const sub = state.cart.reduce((a,l)=>a+unitPrice(l)*l.qty,0);
@@ -636,12 +667,11 @@ document.addEventListener('click', async e => {
   if(a==='focus-field'){ document.getElementById(t.dataset.target)?.focus(); return; }
   if(a==='fav'){
     if(!currentUser()){ abrirAvisoFavorito(t); return; }
-    const id = t.dataset.id, p = byId(id), on = !isFav(id);
-    /* El corazón cambia enseguida y si el servidor no lo guarda vuelve como estaba */
+    const id = t.dataset.id, p = byId(id), antes = isFav(id), on = !antes;
+    /* El corazón cambia enseguida y guardarFavorito manda al servidor el último estado */
     marcarFavorito(id, on);
     toast(on ? `${p.nombre} se guardó en tus favoritos.` : `${p.nombre} se quitó de tus favoritos.`, on ? {link:['Ver favoritos','/favoritos.html']} : {});
-    try{ await api(on ? 'PUT' : 'DELETE', '/api/favoritos/' + encodeURIComponent(id)); }
-    catch(err){ marcarFavorito(id, !on); toast(err.message, {type:'error'}); }
+    guardarFavorito(id, antes);
     return;
   }
   if(a==='toggle-pass'){

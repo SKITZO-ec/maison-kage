@@ -124,6 +124,26 @@ test('el favorito guardado aparece marcado en otra pestaña', async ({ page }) =
   await otra.close();
 });
 
+test('dos clics rápidos en el corazón dejan en el servidor lo mismo que se ve', async ({ page }) => {
+  await cuentaNueva(page);
+  await page.goto('producto.html?id=asad');
+  /* El primer PUT tarda, así sin orden el DELETE del segundo clic llegaría antes al servidor */
+  let primero = true, respuestas = 0;
+  await page.route('**/api/favoritos/asad', async r => {
+    if (primero && r.request().method() === 'PUT') { primero = false; await new Promise(f => setTimeout(f, 600)); }
+    await r.continue();
+  });
+  page.on('response', r => { if (r.url().endsWith('/api/favoritos/asad')) respuestas++; });
+  const corazon = page.locator('#app [data-action=fav]').first();
+  await corazon.click();
+  await corazon.click();
+  await expect(corazon).toHaveAttribute('aria-pressed', 'false');
+  await expect.poll(() => respuestas, { timeout: 5000 }).toBe(2);
+  expect(await (await page.request.get('/api/favoritos')).json()).toEqual([]);
+  expect(await page.evaluate(() => state.favs)).toEqual([]);
+  expect(page.erroresConsola).toEqual([]);
+});
+
 test('si la API falla el corazón vuelve como estaba', async ({ page }) => {
   await cuentaNueva(page);
   await page.goto('producto.html?id=asad');
