@@ -50,3 +50,22 @@ test('el inicio muestra ofertas, novedades y más vendidos', async ({ page }) =>
   await page.goto('index.html');
   for (const id of ['#home-ofertas', '#home-novedades', '#home-top']) await expect(page.locator(id + ' article')).toHaveCount(4);
 });
+
+test('el menú Perfumes tiene el recuadro de Decants como en la baja fidelidad', async ({ page }, info) => {
+  test.skip(info.project.name !== 'escritorio', 'el panel grande es de escritorio');
+  await page.goto('index.html');
+  await page.locator('#btn-perfumes').click();
+  const recuadro = page.locator('#mega [data-recuadro-decants]');
+  await expect(recuadro).toBeVisible();
+  await expect(recuadro).toContainText('Prueba cualquier perfume en 2, 5 o 10 ml antes de comprar el frasco.');
+  await expect(recuadro.locator('img')).toHaveAttribute('src', '/source/img/productos/decant-atomizador.webp');
+  const enlace = recuadro.getByRole('link', { name: 'Ver decants' });
+  await expect(enlace).toHaveAttribute('href', '/decants');
+  /* El enlace suelto Decants ya no se repite en Destacados */
+  await expect(page.locator('#mega a[href="/decants"]')).toHaveCount(1);
+  /* Se llega con Tab desde Más vendidos */
+  await page.locator('#mega a[href="/catalogo.html?top=1"]').focus();
+  await page.keyboard.press('Tab');
+  await expect(enlace).toBeFocused();
+  expect(await recuadro.locator('img').evaluate(i => i.naturalWidth)).toBeGreaterThan(0);
+});
