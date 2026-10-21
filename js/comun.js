@@ -316,11 +316,10 @@ document.addEventListener('keydown', e => {
 
 /* ---------- Cuenta y sesión ---------- */
 /* La cuenta viene de SESION. email, tel y addresses son otros nombres de correo,
-   telefono y SESION.direcciones, así checkout y perfil siguen leyendo los mismos campos.
-   nac queda vacío porque la base no guarda la fecha de nacimiento */
+   telefono y SESION.direcciones, así checkout y perfil siguen leyendo los mismos campos */
 const USUARIO = (() => {
   if(!SES.usuario) return null;
-  const u = Object.assign({}, SES.usuario, {nac:''});
+  const u = Object.assign({}, SES.usuario);
   if(!Array.isArray(SES.direcciones)) SES.direcciones = [];
   Object.defineProperties(u, {
     email: {get(){ return this.correo; }, set(v){ this.correo = v; }, enumerable:true},
@@ -508,6 +507,16 @@ document.addEventListener('paste', e => {
   el.value = limitar(el, el.value.slice(0,a) + txt + el.value.slice(b));
   el.dispatchEvent(new Event('input', {bubbles:true}));
 }, true);
+
+/* Mientras una petición espera, el botón queda con aria-disabled y otro texto.
+   Un segundo clic se ignora y al terminar el botón vuelve como estaba */
+async function conBoton(boton, textoEspera, tarea){
+  if(boton.getAttribute('aria-disabled')==='true') return;
+  const texto = boton.textContent;
+  boton.setAttribute('aria-disabled','true'); boton.textContent = textoEspera;
+  try{ return await tarea(); }
+  finally{ boton.removeAttribute('aria-disabled'); boton.textContent = texto; }
+}
 
 /* Marca un campo con su mensaje de error y le pasa el foco */
 function marcarError(id, msg){

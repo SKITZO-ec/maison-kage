@@ -102,8 +102,8 @@
       <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-nombre" name="pf-nombre" type="text" autocomplete="given-name" aria-required="true" aria-describedby="err-pf-nombre">
       <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-nombre" hidden></p>
     </div><div class="flex flex-col gap-[6px] mb-[18px]">
-      <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-apellido">Apellido <span class="text-red" aria-hidden="true">*</span></label>
-      <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-apellido" name="pf-apellido" type="text" autocomplete="family-name" aria-required="true" aria-describedby="err-pf-apellido">
+      <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-apellido">Apellido <span class="font-normal">(opcional)</span></label>
+      <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-apellido" name="pf-apellido" type="text" autocomplete="family-name" aria-describedby="err-pf-apellido">
       <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-apellido" hidden></p>
     </div></div>
           <div class="flex flex-col gap-[6px] mb-[18px]">
@@ -122,10 +122,6 @@
       <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-tel">Celular <span class="text-red" aria-hidden="true">*</span></label>
       <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-tel" name="pf-tel" type="tel" inputmode="numeric" maxlength="10" data-digits="10" autocomplete="tel" aria-required="true" aria-describedby="err-pf-tel">
       <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-tel" hidden></p>
-    </div><div class="flex flex-col gap-[6px] mb-[18px]">
-      <label class="font-sans font-bold text-[14px] leading-[normal]" for="pf-nac">Fecha de nacimiento <span class="font-normal">(opcional)</span></label>
-      <input class="h-[46px] border-0 border-b-2 border-navy bg-smoke text-navy px-3 font-sans font-normal text-[15px] leading-[normal] w-full aria-[invalid=true]:!border-2 aria-[invalid=true]:!border-red" id="pf-nac" name="pf-nac" type="date" aria-describedby="err-pf-nac">
-      <p class="text-red font-sans font-bold text-[14px] leading-[normal] flex gap-[6px] items-center before:content-['!'] before:inline-grid before:place-items-center before:w-[18px] before:h-[18px] before:rounded-full before:bg-red before:text-ivory before:text-[12px] before:shrink-0" id="err-pf-nac" hidden></p>
     </div></div>
           <button type="submit" class="inline-flex items-center justify-center gap-2 min-h-[46px] px-[22px] font-sans font-bold text-[13px] leading-[normal] tracking-[.1em] uppercase no-underline cursor-pointer border border-solid disabled:bg-smoke disabled:text-navy disabled:border-smoke disabled:cursor-not-allowed disabled:line-through bg-gold text-navy border-gold hover:bg-navy hover:text-ivory hover:border-navy">Guardar cambios</button>
         </form>
