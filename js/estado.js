@@ -1,39 +1,38 @@
 /* =========================================================
    MAISON KAGE · Estado de la página
-   La cuenta, los favoritos y las direcciones vienen del servidor
-   en js/sesion.js (la constante SESION), así se ven igual en
-   cualquier pestaña. El carrito sin sesión y los pedidos todavía
-   se guardan en sessionStorage, los pedidos pasan a la base después
+   La cuenta, los favoritos, las direcciones y el carrito con
+   sesión vienen del servidor en js/sesion.js (la constante SESION),
+   así se ven igual en cualquier pestaña. Sin sesión el carrito
+   se guarda en sessionStorage como en la Fase 1. Los pedidos
+   viven solo en la base
    ========================================================= */
 const STORE_KEY = 'mk-sesion';
-/* Lo único que se guarda en el navegador */
-const GUARDADO = ['cart', 'orders', 'lastOrder', 'orderSeq'];
 
 /* Si js/sesion.js no llegó la página sigue funcionando como si no hubiera sesión */
-const SES = (typeof SESION !== 'undefined' && SESION) || {usuario:null, favoritos:[], direcciones:[]};
+const SES = (typeof SESION !== 'undefined' && SESION) || {usuario:null, favoritos:[], direcciones:[], carrito:[]};
 
-const emptyState = () => ({
-  cart: [],        // líneas del carrito {id, kind:'frasco'|'decant', ml, qty}
-  orders: [],      // pedidos realizados
-  lastOrder: null, // último pedido, para la pantalla de confirmación
-  orderSeq: 1      // contador para el número de pedido
-});
-
-function loadState(){
-  const s = emptyState();
+/* Carrito guardado en esta pestaña sin sesión. Una sesión vieja puede traer cuentas,
+   favoritos o pedidos guardados, todo eso se ignora */
+function carritoSinSesion(){
   try{
     const raw = JSON.parse(sessionStorage.getItem(STORE_KEY)) || {};
-    /* Una sesión vieja puede traer cuentas o favoritos guardados, se ignoran */
-    GUARDADO.forEach(k => { if(k in raw) s[k] = raw[k]; });
-  }catch(e){}
-  return s;
+    return Array.isArray(raw.cart) ? raw.cart : [];
+  }catch(e){ return []; }
 }
-const state = loadState();
+
+const state = {
+  /* líneas del carrito {id, kind:'frasco'|'decant', ml, qty} */
+  cart: SES.usuario ? (Array.isArray(SES.carrito) ? SES.carrito.map(l => ({...l})) : []) : carritoSinSesion()
+};
 state.user = SES.usuario ? SES.usuario.correo : null; // correo de la cuenta con sesión iniciada
 state.favs = [...(SES.favoritos || [])];               // slugs de los perfumes favoritos
 
+/* Sin sesión el carrito queda en sessionStorage. Con sesión lo guarda guardarCarrito() en el servidor */
 function save(){
-  const datos = {};
-  GUARDADO.forEach(k => datos[k] = state[k]);
-  try{ sessionStorage.setItem(STORE_KEY, JSON.stringify(datos)); }catch(e){}
+  if(state.user) return;
+  try{ sessionStorage.setItem(STORE_KEY, JSON.stringify({cart: state.cart})); }catch(e){}
+}
+/* Al entrar a la cuenta el carrito sin sesión ya pasó al servidor, así que se borra de la pestaña */
+function borrarCarritoSinSesion(){
+  try{ sessionStorage.removeItem(STORE_KEY); }catch(e){}
 }

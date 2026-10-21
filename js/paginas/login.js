@@ -12,8 +12,10 @@ $('#lg-form').addEventListener('submit', async e => {
   entrando = true;
   try{
     const u = await api('POST', '/api/login', {correo:$('#lg-email').value.trim().toLowerCase(), clave:$('#lg-pass').value});
-    flash(`Sesión iniciada. Hola, ${u.nombre}.`);
-    /* Al cargar la página siguiente js/sesion.js ya trae la cuenta */
+    /* El carrito sin sesión pasa a la cuenta antes de salir de la página */
+    const fallo = await pasarCarritoALaCuenta();
+    flash(fallo || `Sesión iniciada. Hola, ${u.nombre}.`, fallo ? {type:'error'} : {});
+    /* Al cargar la página siguiente js/sesion.js ya trae la cuenta y su carrito */
     location.href = nextPage;
   }catch(err){
     entrando = false;

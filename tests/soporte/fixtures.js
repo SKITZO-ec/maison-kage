@@ -65,4 +65,31 @@ async function salir(page) {
   await enviar(page, '/api/logout', {});
 }
 
-module.exports = { test, expect: base.expect, cuentaNueva, entrar, salir };
+/* Deja el carrito de la cuenta con sesión con estas líneas, por la API.
+   Cada línea puede ser [id, kind, ml, qty] o { id, kind, ml, qty }.
+   Devuelve lo que guardó el servidor, ya saneado */
+async function carritoCon(page, lineas) {
+  const datos = lineas.map(l => Array.isArray(l) ? { id: l[0], kind: l[1], ml: l[2], qty: l[3] } : l);
+  const r = await page.request.put('/api/carrito', { data: { lineas: datos }, headers: { 'X-CSRF': await csrf(page) } });
+  if (!r.ok()) throw new Error(`/api/carrito respondió ${r.status()} ${await r.text()}`);
+  return r.json();
+}
+
+/* Cambia el stock de una presentación en la base de pruebas, como si otro cliente hubiera comprado.
+   La base es una sola para los tres anchos en paralelo, por eso cada prueba que lo usa
+   debe tocar una presentación que ninguna otra prueba compra ni revisa */
+async function ponerStock(page, id, kind, ml, stock) {
+  await enviar(page, '/api/_prueba/stock', { id, kind, ml, stock });
+}
+
+/* Crea un pedido por la API con lo que tenga el carrito guardado. Por defecto con tarjeta y envío a Quito.
+   Devuelve el pedido con la misma forma que lee el sitio */
+async function pedidoNuevo(page, datos = {}) {
+  const r = await enviar(page, '/api/pedidos', {
+    nombre: 'Ana Ruiz', correo: 'a@b.com', telefono: '0991234567', entrega: 'envio',
+    ciudad: 'Quito', dir: 'Av. Amazonas', ref: '', metodo: 'tarjeta', ultimos4: '1111', ...datos
+  });
+  return r.json();
+}
+
+module.exports = { test, expect: base.expect, cuentaNueva, entrar, salir, carritoCon, ponerStock, pedidoNuevo };

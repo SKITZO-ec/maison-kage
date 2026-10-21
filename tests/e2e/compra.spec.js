@@ -1,8 +1,5 @@
 // Aviso de envío gratis, quitar con deshacer y confirmación del pedido
-const { test, expect, cuentaNueva } = require('../soporte/fixtures');
-
-const PEDIDO = { num: 'MK-1001', fecha: '18 oct 2026', estado: 'En preparación', metodo: 'Tarjeta', items: [{ nombre: 'Khamrah', desc: 'Frasco 50 ml', qty: 1, unit: 27.2 }],
-  total: 30.7, email: 'a@b.com', entrega: 'envio', guia: '426896023910', envio: { nombre: 'Ana Ruiz', dir: 'Av. Amazonas', ciudad: 'Quito', tel: '0991234567' } };
+const { test, expect, cuentaNueva, carritoCon, pedidoNuevo } = require('../soporte/fixtures');
 
 test('aviso de envío gratis desde 60', async ({ page }) => {
   await page.goto('index.html');
@@ -34,9 +31,10 @@ test('quitar y deshacer', async ({ page }) => {
 
 test('confirmación sin crear cuenta y con pasos de la guía', async ({ page }) => {
   await cuentaNueva(page);
-  await page.goto('index.html');
-  await page.evaluate(o => { state.lastOrder = o; save(); }, PEDIDO);
-  await page.goto('confirmacion.html');
+  /* Las compras de las pruebas son de decants de 5 ml de Asad, que tiene stock de sobra */
+  await carritoCon(page, [['asad', 'decant', 5, 1]]);
+  const o = await pedidoNuevo(page);
+  await page.goto('confirmacion.html?n=' + o.num);
   await expect(page.getByText('Crear cuenta para seguir tu pedido')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Ver mis pedidos' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Seguir comprando' })).toBeVisible();

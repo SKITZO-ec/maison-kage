@@ -16,7 +16,9 @@ $('#rg-form').addEventListener('submit', async e => {
   try{
     await api('POST', '/api/registro', {nombre, apellido:ap.join(' '), correo:$('#rg-email').value.trim().toLowerCase(),
       telefono:$('#rg-tel').value.trim(), clave:$('#rg-pass').value});
-    flash('Cuenta creada. Bienvenido a Maison Kage.');
+    /* El carrito sin sesión pasa a la cuenta nueva antes de salir de la página */
+    const fallo = await pasarCarritoALaCuenta();
+    flash(fallo || 'Cuenta creada. Bienvenido a Maison Kage.', fallo ? {type:'error'} : {});
     location.href = nextPage;
   }catch(err){
     creando = false;

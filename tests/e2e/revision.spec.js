@@ -1,10 +1,10 @@
 // Pruebas de los hallazgos de la revisión final
-const { test, expect, cuentaNueva } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva, carritoCon, pedidoNuevo } = require('../soporte/fixtures');
 
 async function conCuentaYCarrito(page, lineas = [['khamrah', 'frasco', 50, 2]]) {
   await cuentaNueva(page);
-  await page.goto('index.html');
-  await page.evaluate(ls => { ls.forEach(l => addToCart(...l, true)); save(); }, lineas);
+  /* Con sesión el carrito vive en la cuenta, así que se llena por la API */
+  await carritoCon(page, lineas);
 }
 
 for (const w of [320, 375, 800, 1024]) test(`encabezado con carrito lleno en ${w} px`, async ({ page }) => {
@@ -92,7 +92,8 @@ test('agregar la última unidad no pierde el foco', async ({ page }) => {
 });
 
 test('un pedido con otro correo aparece en Mis pedidos', async ({ page }) => {
-  await conCuentaYCarrito(page, [['khamrah', 'frasco', 50, 1]]);
+  /* Las compras de las pruebas son de decants de 5 ml de Asad, que tiene stock de sobra */
+  await conCuentaYCarrito(page, [['asad', 'decant', 5, 1]]);
   await page.goto('checkout.html');
   await page.fill('#co-email', 'otro@correo.com'); await page.fill('#co-tel', '0991234567');
   await page.selectOption('#co-ciudad', 'Quito'); await page.fill('#co-dir', 'Av. Amazonas');
@@ -110,8 +111,10 @@ test('el carrito corrige cantidades inválidas', async ({ page }) => {
     { id: 'khamrah', kind: 'frasco', ml: 50, qty: 99 }, { id: 'khamrah', kind: 'decant', ml: 2, qty: 50 },
     { id: 'asad', kind: 'frasco', ml: 50, qty: '2' }, { id: 'yara', kind: 'frasco', ml: 50, qty: -1 }] })));
   await page.goto('carrito.html');
-  expect(await page.evaluate(() => state.cart.map(l => [l.id, l.kind, l.qty]))).toEqual([['khamrah', 'frasco', 6], ['khamrah', 'decant', 10], ['asad', 'frasco', 2]]);
-  await expect(page.locator('#cart-count')).toHaveText('18');
+  /* La prueba de teclado compra frascos de Khamrah 50 ml en paralelo, por eso el máximo se lee del catálogo */
+  const max = await page.evaluate(() => maxDe(byId('khamrah'), 'frasco', 50));
+  expect(await page.evaluate(() => state.cart.map(l => [l.id, l.kind, l.qty]))).toEqual([['khamrah', 'frasco', max], ['khamrah', 'decant', 10], ['asad', 'frasco', 2]]);
+  await expect(page.locator('#cart-count')).toHaveText(String(max + 12));
 });
 
 test('el enlace al modo de uso abre la pregunta', async ({ page }) => {
@@ -136,10 +139,9 @@ test('el texto de Decants coincide con agregar desde la tarjeta', async ({ page 
 
 test('la confirmación en verificación avisa del correo', async ({ page }) => {
   await cuentaNueva(page);
-  await page.goto('index.html');
-  await page.evaluate(() => {
-    state.lastOrder = { num: 'MK-1002', fecha: '18 oct 2026', estado: 'Pago en verificación', metodo: 'Deuna', items: [{ nombre: 'Asad', desc: 'Frasco 50 ml', qty: 1, unit: 26 }],
-      total: 29.5, email: 'a@b.com', entrega: 'envio', guia: null, envio: { nombre: 'Ana Ruiz', dir: 'Av. Amazonas', ciudad: 'Quito', tel: '0991234567' } }; save(); });
-  await page.goto('confirmacion.html');
+  await carritoCon(page, [['asad', 'decant', 5, 1]]);
+  const o = await pedidoNuevo(page, { metodo: 'deuna', ultimos4: undefined, verificacion: true });
+  await page.goto('confirmacion.html?n=' + o.num);
+  await expect(page.getByRole('heading', { name: 'Pedido recibido' })).toBeVisible();
   await expect(page.locator('#app')).toContainText('Te enviamos la confirmación del pedido a a@b.com.');
 });

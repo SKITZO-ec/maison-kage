@@ -36,11 +36,7 @@ if(requireLogin()){
       }
       /* Se vuelve a pedir la cuenta. Si esa lectura falla, sirve lo que contestó el guardado */
       try{ datos = await api('GET', '/api/yo') || datos; }catch(err){}
-      if(datos.correo !== u.email){
-        /* Los pedidos guardados en esta pestaña pasan al correo nuevo */
-        state.orders.forEach(o => { if(o.email===u.email) o.email = datos.correo; if(o.cuenta===u.email) o.cuenta = datos.correo; });
-        state.user = datos.correo;
-      }
+      if(datos.correo !== u.email) state.user = datos.correo;
       Object.assign(u, {nombre:datos.nombre, apellido:datos.apellido, email:datos.correo, tel:datos.telefono});
       save(); pintar(); renderAccountMenu(); renderAccUser(); pedirPass();
       toast('Cambios guardados en tu perfil.');

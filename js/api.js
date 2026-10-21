@@ -13,12 +13,13 @@ function leerCookie(nombre){
   try{ return decodeURIComponent(par.slice(nombre.length + 1)); }catch(e){ return par.slice(nombre.length + 1); }
 }
 
-async function api(metodo, ruta, cuerpo){
+/* opciones.keepalive deja que la petición termine aunque la persona ya se fue a otra página */
+async function api(metodo, ruta, cuerpo, opciones = {}){
   const cabeceras = {'X-CSRF': leerCookie('mk_csrf')};
   if(cuerpo !== undefined) cabeceras['Content-Type'] = 'application/json';
   let r, texto;
   try{
-    r = await fetch(ruta, {method:metodo, headers:cabeceras, body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo), credentials:'same-origin'});
+    r = await fetch(ruta, {method:metodo, headers:cabeceras, body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo), credentials:'same-origin', keepalive: !!opciones.keepalive});
     texto = await r.text();
   }catch(e){ throw new Error(MSG_SIN_CONEXION); }
   let datos = null;

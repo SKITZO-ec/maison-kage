@@ -1,7 +1,8 @@
 /* MAISON KAGE · Checkout: datos de envío, método de pago y pasarela simulada
    En alta fidelidad, "Tarjeta" se reemplaza por la Cajita de Pagos de Payphone
-   y "Deuna" por un QR dinámico de un agregador (por ejemplo Pagomedios). */
-const nextOrderNum = () => 'MK-' + String(1000 + state.orderSeq);
+   y "Deuna" por un QR dinámico de un agregador (por ejemplo Pagomedios).
+   El pedido lo crea el servidor con POST /api/pedidos a partir del carrito guardado
+   en la cuenta, y el número llega en la respuesta */
 
 /* Para pagar hace falta una cuenta. El carrito se queda guardado mientras tanto */
 if(!state.cart.length) $('#app').innerHTML = emptyCartHTML();
@@ -97,11 +98,11 @@ function renderCheckout(){
 
 /* ---------- Pago con tarjeta (en alta fidelidad: Cajita de Pagos de Payphone) ---------- */
 function payCard(data){
-  const t = totals(data.entrega), num = nextOrderNum();
+  const t = totals(data.entrega);
   let timer;
   openModal('Pagar con tarjeta', `<div class="${TW.gw}">
       <p class="${TW.eyebrow}">Pasarela simulada</p>
-      <p id="modal-desc" class="${TW.gwOrder}">Pedido <strong>${num}</strong> · Total <strong>${money(t.total)}</strong></p>
+      <p id="modal-desc" class="${TW.gwOrder}">Total <strong>${money(t.total)}</strong> · El número de pedido llega apenas se apruebe el pago</p>
       <form id="card-form" class="${TW.gwForm}" novalidate>
         <div class="${TW.errSummary}" id="card-errors" tabindex="-1" role="alert" hidden></div>
         ${field({id:'cd-num', label:'Número de tarjeta', auto:'cc-number', attrs:'inputmode="numeric" maxlength="19" data-card data-rule="card"', tight:true})}
@@ -116,12 +117,16 @@ function payCard(data){
     </div>`,
     [{label:'Cancelar', cls:TW.btnOutline, id:'gw-cancel', fn:() => { clearTimeout(timer); closeModal(); toast('Pago cancelado. Tu carrito sigue intacto.'); }},
      {label:'Pagar ' + money(t.total), cls:TW.btnGold, id:'gw-pay', fn:() => {
+        /* Mientras espera, el botón queda con aria-disabled y los clics de más se ignoran */
+        if($('#gw-pay').getAttribute('aria-disabled')==='true') return;
         if(!checkFilled($('#card-form'), 'card-errors')) return;
-        $('#gw-pay').disabled = $('#gw-cancel').disabled = true;
+        $('#gw-pay').setAttribute('aria-disabled','true'); $('#gw-cancel').disabled = true;
         const st = $('#gw-status'); st.hidden = false; st.textContent = 'Procesando el pago con tu banco…';
+        /* Solo se mandan los últimos 4 dígitos, el resto de la tarjeta nunca sale de la página */
+        const ultimos4 = $('#cd-num').value.replace(/\D/g,'').slice(-4);
         timer = setTimeout(() => {
           st.textContent = 'Pago aprobado. Generando tu pedido…';
-          timer = setTimeout(() => { createOrder(data, 'Tarjeta', 'En preparación', num); location.href = 'confirmacion.html'; }, 900);
+          timer = setTimeout(() => createOrder(data, {metodo:'tarjeta', ultimos4}), 900);
         }, 1600);
      }}],
     {onCancel:() => { clearTimeout(timer); toast('Pago cancelado. Tu carrito sigue intacto.'); }});
@@ -137,14 +142,14 @@ function payCard(data){
    hay tiempo límite visible, pasos que avanzan solos y una salida clara
    ("Ya pagué y no se actualiza") que deja el pedido guardado en verificación. */
 function payDeuna(data){
-  const t = totals(data.entrega), num = nextOrderNum();
+  const t = totals(data.entrega);
   let secs = 600, tick, t1, t2;
   const stop = () => { clearInterval(tick); clearTimeout(t1); clearTimeout(t2); };
   const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
   const dt = TW.gwDt, dd = TW.gwDd;
   openModal('Pagar con Deuna', `<div class="${TW.gw}">
       <p class="${TW.eyebrow}">Pasarela simulada</p>
-      <p id="modal-desc" class="${TW.gwOrder}">Pedido <strong>${num}</strong> reservado. Aún no se ha cobrado nada.</p>
+      <p id="modal-desc" class="${TW.gwOrder}">Tu pedido recibe su número apenas pagues. Aún no se ha cobrado nada.</p>
       ${ph('Código QR de Deuna por ' + money(t.total), 'phQr')}
       <dl class="${TW.gwData}">
         <dt class="${dt}">Monto exacto</dt><dd class="${dd}">${money(t.total)}</dd>
@@ -162,18 +167,22 @@ function payDeuna(data){
     </div>`,
     [{label:'Cancelar pago', cls:TW.btnOutline, id:'gw-cancel', fn:() => { stop(); closeModal(); toast('Pago cancelado. No se cobró nada y tu carrito sigue intacto.'); }},
      {label:'Simular pago en la app', cls:TW.btnGold, id:'gw-sim', fn:() => {
+        if(esperando()) return;
         clearInterval(tick);
-        $('#gw-sim').disabled = $('#gw-cancel').disabled = $('#gw-late').disabled = true;
+        bloquear();
         const steps = $$('#gw-steps li');
         const advance = i => { steps.forEach((li,j) => { li.toggleAttribute('data-done', j<i); j===i ? li.setAttribute('aria-current','step') : li.removeAttribute('aria-current'); if(j<i) li.firstElementChild.innerHTML = ICON.check.replace('<svg','<svg width="14" height="14"'); }); };
         advance(1); $('#gw-status').textContent = 'Recibimos tu pago. Confirmando tu pedido…';
         t1 = setTimeout(() => {
           advance(2); $('#gw-status').textContent = 'Pago aprobado. Pedido confirmado.';
-          t2 = setTimeout(() => { createOrder(data, 'Deuna', 'En preparación', num); location.href = 'confirmacion.html'; }, 900);
+          t2 = setTimeout(() => createOrder(data, {metodo:'deuna', verificacion:false}), 900);
         }, 1400);
      }}],
     {onCancel:() => { stop(); toast('Pago cancelado. No se cobró nada y tu carrito sigue intacto.'); }});
 
+  /* Mientras se confirma el pago los dos botones de pagar quedan con aria-disabled y no repiten */
+  const esperando = () => $('#gw-sim').getAttribute('aria-disabled')==='true';
+  const bloquear = () => { $('#gw-sim').setAttribute('aria-disabled','true'); $('#gw-late').setAttribute('aria-disabled','true'); $('#gw-cancel').disabled = true; };
   const startTimer = () => {
     clearInterval(tick);
     tick = setInterval(() => {
@@ -186,26 +195,34 @@ function payDeuna(data){
     }, 1000);
   };
   $('#gw-renew').onclick = () => { secs = 600; $('#gw-timer').textContent = fmt(secs); $('#gw-renew').hidden = true; $('#gw-sim').disabled = false; $('#gw-status').textContent = 'Código nuevo listo. Esperando tu pago.'; startTimer(); };
-  $('#gw-late').onclick = () => { stop(); createOrder(data, 'Deuna', 'Pago en verificación', num); location.href = 'confirmacion.html'; };
+  /* "Ya pagué y no se actualiza" deja el pedido guardado en verificación */
+  $('#gw-late').onclick = () => {
+    if(esperando()) return;
+    stop(); bloquear();
+    $('#gw-status').textContent = 'Guardando tu pedido para revisar el pago…';
+    createOrder(data, {metodo:'deuna', verificacion:true});
+  };
   startTimer();
 }
 
-/* ---------- Crear el pedido ---------- */
-function createOrder(data, metodo, estado, num){
-  const items = state.cart.map(l => { const p = byId(l.id); return {nombre:p.nombre, desc:(l.kind==='decant'?'Decant ':'Frasco ')+l.ml+' ml', qty:l.qty, unit:unitPrice(l)}; });
-  const o = {num, fecha:new Date().toLocaleDateString('es-EC',{day:'numeric',month:'short',year:'numeric'}), estado, metodo, items,
-             total:totals(data.entrega).total, email:data.email, entrega:data.entrega,
-             /* El pedido queda ligado a la cuenta aunque se use otro correo de contacto */
-             cuenta:state.user,
-             /* Guía simulada de 12 dígitos. En producción la entrega Servientrega al generar el envío */
-             guia:data.entrega==='envio' ? String(Math.floor(1e11 + Math.random()*9e11)) : null,
-             envio:{nombre:data.nombre, dir:data.dir, ciudad:data.ciudad, tel:data.tel}};
-  state.orderSeq++; state.orders.unshift(o); state.lastOrder = o; state.cart = [];
-  /* Si hay sesión, se guardan el celular y la primera dirección para la próxima compra */
-  const u = currentUser();
-  if(u){
-    if(!u.tel) u.tel = data.tel;
-    if(!u.addresses.length && data.entrega==='envio') u.addresses.push({id:Date.now(), alias:'Principal', dir:data.dir, ciudad:data.ciudad, ref:data.ref, tel:data.tel, principal:true});
+/* ---------- Crear el pedido ----------
+   El servidor toma las líneas del carrito guardado, descuenta el stock, vacía el carrito
+   y guarda el celular y la primera dirección si la cuenta no los tenía.
+   Si algo falla, por ejemplo porque otro cliente se llevó la última unidad, el diálogo se cierra
+   y el mensaje del servidor aparece arriba del formulario, sin salir del checkout */
+async function createOrder(data, pago){
+  if(modalCtx) modalCtx.bloqueado = true;
+  const cuerpo = {nombre:data.nombre, correo:data.email, telefono:data.tel, entrega:data.entrega, ...pago};
+  if(data.entrega==='envio') Object.assign(cuerpo, {ciudad:data.ciudad, dir:data.dir, ref:data.ref});
+  try{
+    const o = await api('POST', '/api/pedidos', cuerpo);
+    state.cart = []; updateCartBadge();
+    location.href = 'confirmacion.html?n=' + encodeURIComponent(o.num);
+  }catch(err){
+    if(modalCtx) modalCtx.bloqueado = false;
+    closeModal();
+    const box = $('#co-errors');
+    box.innerHTML = `<h2 class="${TW.errSummaryTitle}">No pudimos crear tu pedido</h2><p class="${TW.errSummaryItem}">${esc(err.message)}</p>`;
+    box.hidden = false; box.focus();
   }
-  save();
 }

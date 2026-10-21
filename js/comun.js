@@ -142,7 +142,37 @@ function limpiarCarrito(){
     const max = maxDe(byId(l.id), l.kind, l.ml), q = Math.floor(Number(l.qty));
     return {...l, qty: Number.isFinite(q) ? Math.min(q, max) : 0};
   }).filter(l => l.qty > 0);
-  if(JSON.stringify(state.cart) !== antes) save();
+  /* El carrito de la base se guarda saneado pero se lee tal cual, así que si el stock bajó
+     desde entonces la versión corregida se manda una vez para que el servidor quede igual */
+  if(JSON.stringify(state.cart) !== antes) guardarCarrito();
+}
+/* Guarda el carrito después de cada cambio. Sin sesión va a sessionStorage como en la Fase 1.
+   Con sesión la página ya cambió state.cart y aquí se manda completo al servidor.
+   Si hay un envío en camino no se manda otro encima, al terminar se manda una vez más
+   con lo último, así el servidor siempre termina con el carrito que se ve.
+   Si el servidor devuelve otra cosa, por ejemplo menos unidades por el stock, esa respuesta
+   pasa a state.cart y la página se vuelve a dibujar */
+let carritoEnCamino = null, carritoOtraVez = false;
+const mismoCarrito = (a, b) => JSON.stringify(a.map(l => [lineKey(l), l.qty])) === JSON.stringify(b.map(l => [lineKey(l), l.qty]));
+function guardarCarrito(){
+  if(!currentUser()){ save(); return Promise.resolve(); }
+  if(carritoEnCamino){ carritoOtraVez = true; return carritoEnCamino; }
+  carritoEnCamino = (async () => {
+    try{
+      do{
+        carritoOtraVez = false;
+        let lineas;
+        try{ lineas = await api('PUT', '/api/carrito', {lineas: state.cart}, {keepalive:true}); }
+        catch(err){ if(!carritoOtraVez) toast(err.message, {type:'error'}); continue; }
+        if(!carritoOtraVez && Array.isArray(lineas) && !mismoCarrito(lineas, state.cart)){
+          state.cart = lineas;
+          updateCartBadge();
+          document.dispatchEvent(new CustomEvent('mk:carrito'));
+        }
+      }while(carritoOtraVez);
+    }finally{ carritoEnCamino = null; }
+  })();
+  return carritoEnCamino;
 }
 /* entrega: 'envio' (a domicilio) o 'retiro' (en el local, sin costo) */
 function totals(entrega='envio'){
@@ -164,10 +194,19 @@ function addToCart(id, kind, ml, qty, silent=false){
     return false;
   }
   if(line) line.qty += qty; else state.cart.push({id, kind, ml, qty});
-  save(); updateCartBadge();
+  guardarCarrito(); updateCartBadge();
   document.dispatchEvent(new CustomEvent('mk:carrito'));
   if(!silent) toast(`Agregado al carrito: ${p.nombre}, ${kind==='decant'?'decant ':'frasco '}${ml} ml`, {link:['Ver carrito','carrito.html']});
   return true;
+}
+/* Al iniciar sesión o crear la cuenta, lo que estaba en el carrito sin sesión se suma al de la cuenta.
+   Si sale bien se borra de la pestaña. Si falla queda en la pestaña y se devuelve el mensaje para avisarlo */
+async function pasarCarritoALaCuenta(){
+  if(!state.cart.length) return null;
+  try{ await api('POST', '/api/carrito/fusionar', {lineas: state.cart}); }
+  catch(err){ return err.message; }
+  borrarCarritoSinSesion();
+  return null;
 }
 function updateCartBadge(){
   const n = cartCount();
@@ -269,7 +308,8 @@ function closeModal(){
   const last = modalCtx?.last; modalCtx = null;
   if(last && document.contains(last)) last.focus();
 }
-function cancelModal(){ const fn = modalCtx?.onCancel; closeModal(); fn && fn(); }
+/* Mientras se crea el pedido el diálogo no se puede cerrar con Escape ni con clic afuera */
+function cancelModal(){ if(modalCtx?.bloqueado) return; const fn = modalCtx?.onCancel; closeModal(); fn && fn(); }
 $('#modal-root').addEventListener('click', e => { if(e.target.id==='modal-root') cancelModal(); });
 $('#modal').addEventListener('keydown', e => {
   if(e.key==='Escape'){ e.preventDefault(); cancelModal(); return; }

@@ -1,4 +1,6 @@
 /* MAISON KAGE · Carrito
+   Cada cambio se ve enseguida y después se guarda con guardarCarrito(),
+   en sessionStorage sin sesión o en la cuenta con sesión.
    Quitar un producto es inmediato. En su lugar aparece un aviso con el botón Deshacer,
    que recibe el foco para que también se pueda usar con el teclado */
 let quitado = null;
@@ -50,7 +52,7 @@ document.addEventListener('click', async e => {
     const l = state.cart.find(x => lineKey(x)===t.dataset.key), p = byId(l.id);
     const max = maxDe(p, l.kind, l.ml);
     l.qty = Math.min(max, Math.max(1, l.qty + +t.dataset.d));
-    save(); updateCartBadge(); renderCart();
+    guardarCarrito(); updateCartBadge(); renderCart();
     const again = $(`[data-action=cart-qty][data-key="${t.dataset.key}"][data-d="${t.dataset.d}"]`);
     (again && !again.disabled ? again : $(`[data-action=cart-qty][data-key="${t.dataset.key}"]:not([disabled])`))?.focus();
   }
@@ -58,15 +60,22 @@ document.addEventListener('click', async e => {
     const i = state.cart.findIndex(x => lineKey(x)===t.dataset.key);
     quitado = {l: state.cart[i], i};
     state.cart.splice(i, 1);
-    save(); updateCartBadge(); renderCart();
+    guardarCarrito(); updateCartBadge(); renderCart();
     $('[data-action=cart-undo]').focus();
   }
   if(t.dataset.action==='cart-undo' && quitado){
     const {l, i} = quitado; quitado = null;
     if(!state.cart.some(x => lineKey(x)===lineKey(l))) state.cart.splice(Math.min(i, state.cart.length), 0, l);
-    save(); updateCartBadge(); renderCart();
+    guardarCarrito(); updateCartBadge(); renderCart();
     $(`[data-action=cart-remove][data-key="${lineKey(l)}"]`)?.focus();
   }
+});
+
+/* Si el servidor corrigió el carrito se vuelve a dibujar y el foco vuelve al mismo botón si sigue ahí */
+document.addEventListener('mk:carrito', () => {
+  const a = document.activeElement, sel = a?.dataset?.action ? `[data-action="${a.dataset.action}"]${a.dataset.key ? `[data-key="${a.dataset.key}"]` : ''}${a.dataset.d ? `[data-d="${a.dataset.d}"]` : ''}` : null;
+  renderCart();
+  if(sel) $(sel)?.focus();
 });
 
 renderCart();

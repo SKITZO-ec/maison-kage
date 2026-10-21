@@ -1,5 +1,5 @@
 // Campos con límites (celular de 10 dígitos, tarjeta de 16), registro y perfil
-const { test, expect, cuentaNueva, salir } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva, salir, carritoCon } = require('../soporte/fixtures');
 
 async function conCuenta(page) {
   await cuentaNueva(page);
@@ -37,7 +37,7 @@ test('todos los celulares tienen el límite', async ({ page }) => {
 
 test('la tarjeta no pasa de 16 dígitos', async ({ page }) => {
   await conCuenta(page);
-  await page.evaluate(() => addToCart('khamrah', 'frasco', 50, 1, true));
+  await carritoCon(page, [['khamrah', 'frasco', 50, 1]]);
   await page.goto('checkout.html');
   await expect(page.locator('#co-tel')).toHaveAttribute('data-digits', '10');
   await page.fill('#co-tel', '0991234567'); await page.selectOption('#co-ciudad', 'Quito'); await page.fill('#co-dir', 'Av. Amazonas y Colón');

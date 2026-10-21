@@ -1,8 +1,26 @@
-/* MAISON KAGE · Confirmación del pedido */
-const o = state.lastOrder;
-if(!o){
+/* MAISON KAGE · Confirmación del pedido
+   El número llega en la dirección (confirmacion.html?n=MK-000001) y el pedido se pide al servidor.
+   Sin número, con uno que no tiene forma de pedido o con uno que no es de la cuenta se ve el aviso vacío */
+const numPedido = params.get('n') || '';
+const sinPedido = () => {
   $('#app').innerHTML = `<div class="${TW.empty}"><div class="${TW.emptyIcon}">${ICON.box}</div><h1 class="${TW.emptyTitle}">No hay un pedido reciente</h1><p class="${TW.emptyP}">Cuando confirmes un pago verás aquí el resumen de tu pedido.</p><div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Ver los perfumes</a></div></div>`;
-} else {
+};
+
+async function cargarPedido(){
+  if(!currentUser() || !/^MK-\d{6,}$/.test(numPedido)) return sinPedido();
+  $('#app').innerHTML = `<p class="${TW.pageIntro}" role="status">Cargando tu pedido…</p>`;
+  let o;
+  try{ o = await api('GET', '/api/pedidos/' + encodeURIComponent(numPedido)); }
+  catch(err){
+    if(err.estado === 404) return sinPedido();
+    $('#app').innerHTML = `<div class="${TW.empty}" role="alert"><p class="${TW.emptyP}">${esc(err.message)}</p><div class="${TW.emptyBtns}"><button type="button" class="${TW.btnOutline}" id="cf-retry">Reintentar</button></div></div>`;
+    $('#cf-retry').onclick = cargarPedido;
+    return;
+  }
+  pintarPedido(o);
+}
+
+function pintarPedido(o){
   const verif = o.estado === 'Pago en verificación';
   const nombre = esc(o.envio.nombre.split(' ')[0]);
   const dt = TW.dt, dd = TW.dd;
@@ -41,3 +59,5 @@ if(!o){
     <div class="${TW.btnRowCenter}">${nextBtn}<a class="${TW.btnOutline}" href="index.html">Seguir comprando</a></div>
   </div>`;
 }
+
+cargarPedido();
