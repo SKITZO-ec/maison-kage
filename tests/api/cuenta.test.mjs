@@ -118,6 +118,35 @@ test('el teléfono es opcional al registrarse', async () => {
   assert.equal((await api.get('/api/yo')).cuerpo.telefono, null);
 });
 
+test('el apellido es opcional al registrarse y se guarda vacío', async () => {
+  for (const extra of [{ apellido: '' }, { apellido: '   ' }, { apellido: undefined }, { apellido: null }]){
+    const api = cliente(app.base);
+    const r = await api.post('/api/registro', datos(extra));
+    assert.equal(r.status, 201, JSON.stringify(extra));
+    assert.equal(r.cuerpo.apellido, '');
+    assert.equal((await api.get('/api/yo')).cuerpo.apellido, '');
+  }
+  const largo = await cliente(app.base).post('/api/registro', datos({ apellido: 'x'.repeat(61) }));
+  assert.equal(largo.status, 400);
+  assert.equal(largo.cuerpo.error, 'El campo Apellido no puede tener más de 60 caracteres.');
+  const raro = await cliente(app.base).post('/api/registro', datos({ apellido: 5 }));
+  assert.equal(raro.status, 400);
+  assert.equal(raro.cuerpo.error, 'El campo Apellido no es válido.');
+});
+
+test('el perfil puede dejar el apellido vacío pero no el nombre', async () => {
+  const api = cliente(app.base);
+  const d = datos();
+  await api.post('/api/registro', d);
+  const r = await api.patch('/api/yo', { nombre: 'Ana', apellido: '', correo: d.correo });
+  assert.equal(r.status, 200);
+  assert.equal(r.cuerpo.apellido, '');
+  assert.equal((await api.get('/api/yo')).cuerpo.apellido, '');
+  const sinNombre = await api.patch('/api/yo', { nombre: '', apellido: 'Ruiz' });
+  assert.equal(sinNombre.status, 400);
+  assert.equal(sinNombre.cuerpo.error, 'Completa el campo Nombre.');
+});
+
 test('una clave de 7 caracteres responde 400 y faltan campos obligatorios', async () => {
   const api = cliente(app.base);
   const r = await api.post('/api/registro', datos({ clave: '1234567' }));

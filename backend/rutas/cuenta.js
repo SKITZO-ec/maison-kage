@@ -4,7 +4,7 @@
    ========================================================= */
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { ErrorUsuario, normalizarCorreo, validarCorreo, validarTelefono, validarClave, validarTexto } from '../reglas.js';
+import { ErrorUsuario, normalizarCorreo, validarCorreo, validarTelefono, validarClave, validarTexto, validarTextoOpcional } from '../reglas.js';
 import { crearSesion, cerrarSesion, cerrarOtrasSesiones, exigirSesion } from '../sesion.js';
 
 const COSTO = 12;
@@ -23,7 +23,8 @@ export function rutasCuenta(pool){
     try{
       const b = cuerpoDe(req);
       const nombre = validarTexto(b.nombre, 'Nombre', 60);
-      const apellido = validarTexto(b.apellido, 'Apellido', 60);
+      /* El formulario tiene un solo campo Nombre y apellido, quien escribe una sola palabra queda sin apellido */
+      const apellido = validarTextoOpcional(b.apellido, 'Apellido', 60);
       const correo = validarCorreo(b.correo);
       const telefono = validarTelefono(b.telefono);
       const clave = validarClave(b.clave);
@@ -76,7 +77,7 @@ export function rutasCuenta(pool){
       const actual = req.usuario;
       /* Un campo que no viene se queda como estaba */
       const nombre = b.nombre === undefined ? actual.nombre : validarTexto(b.nombre, 'Nombre', 60);
-      const apellido = b.apellido === undefined ? actual.apellido : validarTexto(b.apellido, 'Apellido', 60);
+      const apellido = b.apellido === undefined ? actual.apellido : validarTextoOpcional(b.apellido, 'Apellido', 60);
       const telefono = b.telefono === undefined ? (actual.telefono ?? null) : validarTelefono(b.telefono);
       const correo = b.correo === undefined ? actual.correo : validarCorreo(b.correo);
       const cambiaCorreo = correo !== actual.correo;

@@ -52,3 +52,12 @@ export function validarTexto(valor, nombreCampo, max){
   if (texto.length > max) throw new ErrorUsuario(`El campo ${nombreCampo} no puede tener más de ${max} caracteres.`);
   return texto;
 }
+
+/* Un campo de texto que se puede dejar vacío. Sin valor devuelve '' porque la columna es NOT NULL */
+export function validarTextoOpcional(valor, nombreCampo, max){
+  if (valor === undefined || valor === null) return '';
+  if (typeof valor !== 'string') throw new ErrorUsuario(`El campo ${nombreCampo} no es válido.`);
+  const texto = valor.trim();
+  if (texto.length > max) throw new ErrorUsuario(`El campo ${nombreCampo} no puede tener más de ${max} caracteres.`);
+  return texto;
+}

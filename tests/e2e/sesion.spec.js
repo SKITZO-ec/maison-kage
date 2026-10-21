@@ -147,3 +147,15 @@ test('cerrar sesión desde el menú y recargar deja la cuenta sin sesión', asyn
   await expect(page.locator('#dd-account')).toContainText('Bienvenido a Maison Kage');
   expect(await (await page.request.get('/api/yo')).json()).toBeNull();
 });
+
+test('registrarse con una sola palabra en el nombre funciona', async ({ page }) => {
+  const correo = `ana+${Date.now()}${Math.random().toString(16).slice(2, 8)}@correo.com`;
+  await page.goto('registro.html');
+  await page.fill('#rg-nombre', 'Ana'); await page.fill('#rg-email', correo); await page.fill('#rg-tel', '0991234567');
+  await page.fill('#rg-pass', 'clave1234'); await page.fill('#rg-pass2', 'clave1234');
+  await page.click('#rg-form button[type=submit]');
+  await expect(page).toHaveURL(/perfil\.html/);
+  await expect(page.locator('#dd-account')).toContainText('Hola, Ana');
+  await expect(page.locator('#pf-apellido')).toHaveValue('');
+  expect(await (await page.request.get('/api/yo')).json()).toMatchObject({ nombre: 'Ana', apellido: '' });
+});
