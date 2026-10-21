@@ -1,5 +1,5 @@
 // Aviso de envío gratis, quitar con deshacer y confirmación del pedido
-const { test, expect } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva } = require('../soporte/fixtures');
 
 const PEDIDO = { num: 'MK-1001', fecha: '18 oct 2026', estado: 'En preparación', metodo: 'Tarjeta', items: [{ nombre: 'Khamrah', desc: 'Frasco 50 ml', qty: 1, unit: 27.2 }],
   total: 30.7, email: 'a@b.com', entrega: 'envio', guia: '426896023910', envio: { nombre: 'Ana Ruiz', dir: 'Av. Amazonas', ciudad: 'Quito', tel: '0991234567' } };
@@ -33,8 +33,9 @@ test('quitar y deshacer', async ({ page }) => {
 });
 
 test('confirmación sin crear cuenta y con pasos de la guía', async ({ page }) => {
+  await cuentaNueva(page);
   await page.goto('index.html');
-  await page.evaluate(o => { state.accounts['a@b.com'] = newAccount('Ana', 'Ruiz', 'a@b.com'); state.user = 'a@b.com'; state.lastOrder = o; save(); }, PEDIDO);
+  await page.evaluate(o => { state.lastOrder = o; save(); }, PEDIDO);
   await page.goto('confirmacion.html');
   await expect(page.getByText('Crear cuenta para seguir tu pedido')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Ver mis pedidos' })).toBeVisible();

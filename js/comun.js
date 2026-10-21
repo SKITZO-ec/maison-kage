@@ -1,6 +1,6 @@
 /* =========================================================
    MAISON KAGE · Funciones comunes de todas las páginas
-   Orden de carga: datos.js, estado.js, comun.js, script de la página
+   Orden de carga: datos.js, productos.js, sesion.js, api.js, estado.js, comun.js, script de la página
    ========================================================= */
 
 /* ---------- Utilidades ---------- */
@@ -84,6 +84,13 @@ function foto(p, vista, label, variant='ph', decorative=false){
 
 /* ---------- Favoritos ---------- */
 const isFav = id => state.favs.includes(id);
+/* Pone el estado del favorito en state.favs y en todos los corazones de ese perfume */
+function marcarFavorito(id, on){
+  const p = byId(id);
+  state.favs = on ? [...state.favs.filter(x => x!==id), id] : state.favs.filter(x => x!==id);
+  $$(`[data-action="fav"][data-id="${id}"]`).forEach(b => { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', `${on?'Quitar':'Guardar'} ${p.nombre} ${on?'de':'en'} favoritos`); });
+  document.dispatchEvent(new CustomEvent('mk:favs'));
+}
 function favBtn(p, inline=false){
   const on = isFav(p.id);
   return `<button type="button" class="${inline ? TW.favInline : TW.fav}" data-action="fav" data-id="${p.id}" aria-pressed="${on}" aria-label="${on?'Quitar':'Guardar'} ${esc(p.nombre)} ${on?'de':'en'} favoritos">${ICON.heart}</button>`;
@@ -308,9 +315,21 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- Cuenta y sesión ---------- */
-const currentUser = () => state.user ? state.accounts[state.user] || null : null;
-const newAccount = (nombre, apellido, email) => ({nombre, apellido, email, tel:'', nac:'', addresses:[]});
-const nameFromEmail = email => { const n = email.split('@')[0].split(/[._\-0-9]+/).filter(Boolean)[0] || 'cliente'; return n[0].toUpperCase() + n.slice(1); };
+/* La cuenta viene de SESION. email, tel y addresses son otros nombres de correo,
+   telefono y SESION.direcciones, así checkout y perfil siguen leyendo los mismos campos.
+   nac queda vacío porque la base no guarda la fecha de nacimiento */
+const USUARIO = (() => {
+  if(!SES.usuario) return null;
+  const u = Object.assign({}, SES.usuario, {nac:''});
+  if(!Array.isArray(SES.direcciones)) SES.direcciones = [];
+  Object.defineProperties(u, {
+    email: {get(){ return this.correo; }, set(v){ this.correo = v; }, enumerable:true},
+    tel: {get(){ return this.telefono || ''; }, set(v){ this.telefono = v || null; }, enumerable:true},
+    addresses: {get(){ return SES.direcciones; }, set(v){ SES.direcciones = v; }, enumerable:true}
+  });
+  return u;
+})();
+const currentUser = () => USUARIO;
 
 function renderAccountMenu(){
   const u = currentUser(), dd = $('#dd-account');
@@ -388,8 +407,10 @@ function aplicarFavoritoPendiente(){
   try{ id = sessionStorage.getItem(FAV_PEND); sessionStorage.removeItem(FAV_PEND); }catch(e){}
   const p = id && byId(id);
   if(!p || !currentUser() || isFav(id)) return;
-  state.favs = [...state.favs, id]; save();
-  toast(`${p.nombre} se guardó en tus favoritos.`, {link:['Ver favoritos','favoritos.html']});
+  api('PUT', '/api/favoritos/' + encodeURIComponent(id)).then(() => {
+    marcarFavorito(id, true);
+    toast(`${p.nombre} se guardó en tus favoritos.`, {link:['Ver favoritos','favoritos.html']});
+  }, err => toast(err.message, {type:'error'}));
 }
 
 /* Las páginas de Mi cuenta piden sesión iniciada */
@@ -496,16 +517,6 @@ function marcarError(id, msg){
   el.focus();
 }
 
-/* Hash de la contraseña en el navegador. Es provisional, en la Fase 2 la revisa el servidor con bcrypt.
-   Si el navegador no tiene crypto.subtle se devuelve null y no se revisa */
-async function hashPass(pass){
-  if(!window.crypto?.subtle) return null;
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('mk|' + pass));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
-}
-/* Revisa una contraseña contra la cuenta. Una cuenta sin hash guardado la acepta */
-async function passOk(u, pass){ return !u.passHash || u.passHash === await hashPass(pass); }
-
 /* Al corregir un campo marcado con error, el error se quita apenas el dato es válido */
 ['input','change'].forEach(ev => document.addEventListener(ev, e => {
   const el = e.target;
@@ -544,11 +555,11 @@ document.addEventListener('click', async e => {
   if(a==='fav'){
     if(!currentUser()){ abrirAvisoFavorito(t); return; }
     const id = t.dataset.id, p = byId(id), on = !isFav(id);
-    state.favs = on ? [...state.favs, id] : state.favs.filter(x => x!==id);
-    save();
-    $$(`[data-action="fav"][data-id="${id}"]`).forEach(b => { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', `${on?'Quitar':'Guardar'} ${p.nombre} ${on?'de':'en'} favoritos`); });
+    /* El corazón cambia enseguida y si el servidor no lo guarda vuelve como estaba */
+    marcarFavorito(id, on);
     toast(on ? `${p.nombre} se guardó en tus favoritos.` : `${p.nombre} se quitó de tus favoritos.`, on ? {link:['Ver favoritos','favoritos.html']} : {});
-    document.dispatchEvent(new CustomEvent('mk:favs'));
+    try{ await api(on ? 'PUT' : 'DELETE', '/api/favoritos/' + encodeURIComponent(id)); }
+    catch(err){ marcarFavorito(id, !on); toast(err.message, {type:'error'}); }
     return;
   }
   if(a==='toggle-pass'){
@@ -561,7 +572,8 @@ document.addEventListener('click', async e => {
   if(a==='logout'){
     closeAllMenus();
     if(await confirmDialog('¿Cerrar sesión?', 'Tu carrito se mantiene en este dispositivo. Para ver tus pedidos tendrás que volver a ingresar.', 'Cerrar sesión')){
-      state.user = null; save();
+      try{ await api('POST', '/api/logout'); }
+      catch(err){ toast(err.message, {type:'error'}); return; }
       flash('Cerraste sesión correctamente.');
       location.href = 'index.html';
     }

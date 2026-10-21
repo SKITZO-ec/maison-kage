@@ -1,5 +1,6 @@
 /* MAISON KAGE · Mi perfil
-   Datos personales y cambio de contraseña. Cambiar el correo pide la contraseña actual */
+   Datos personales y cambio de contraseña. Cambiar el correo pide la contraseña actual.
+   El servidor revisa las contraseñas y guarda los cambios */
 if(requireLogin()){
   const u = currentUser();
   $('#pf-nombre').value = u.nombre;
@@ -20,15 +21,20 @@ if(requireLogin()){
     e.preventDefault();
     if(!checkFilled(e.target, 'pf-errors')) return;
     const email = $('#pf-email').value.trim().toLowerCase();
-    if(email !== u.email){
-      if(state.accounts[email]) return marcarError('pf-email', 'Ya existe una cuenta con ese correo.');
-      if(!(await passOk(u, $('#pf-pass').value))) return marcarError('pf-pass', 'La contraseña actual no es correcta.');
-      /* La cuenta y sus pedidos pasan al correo nuevo */
-      delete state.accounts[u.email];
-      state.orders.forEach(o => { if(o.email===u.email) o.email = email; if(o.cuenta===u.email) o.cuenta = email; });
-      state.accounts[email] = u; state.user = email;
+    const cambios = {nombre:$('#pf-nombre').value.trim(), apellido:$('#pf-apellido').value.trim(), telefono:$('#pf-tel').value.trim(), correo:email};
+    if(email !== u.email) cambios.claveActual = $('#pf-pass').value;
+    let datos;
+    try{ datos = await api('PATCH', '/api/yo', cambios); }
+    catch(err){
+      if(err.estado !== 400 && err.estado !== 409) return toast(err.message, {type:'error'});
+      return marcarError(/contraseña/i.test(err.message) ? 'pf-pass' : /correo/i.test(err.message) ? 'pf-email' : /celular/i.test(err.message) ? 'pf-tel' : /apellido/i.test(err.message) ? 'pf-apellido' : 'pf-nombre', err.message);
     }
-    Object.assign(u, {nombre:$('#pf-nombre').value.trim(), apellido:$('#pf-apellido').value.trim(), email, tel:$('#pf-tel').value.trim(), nac:$('#pf-nac').value});
+    if(datos.correo !== u.email){
+      /* Los pedidos guardados en esta pestaña pasan al correo nuevo */
+      state.orders.forEach(o => { if(o.email===u.email) o.email = datos.correo; if(o.cuenta===u.email) o.cuenta = datos.correo; });
+      state.user = datos.correo;
+    }
+    Object.assign(u, {nombre:datos.nombre, apellido:datos.apellido, email:datos.correo, tel:datos.telefono, nac:$('#pf-nac').value});
     save(); renderAccountMenu(); renderAccUser(); pedirPass();
     toast('Cambios guardados en tu perfil.');
   });
@@ -36,9 +42,12 @@ if(requireLogin()){
   $('#pw-form').addEventListener('submit', async e => {
     e.preventDefault();
     if(!checkFilled(e.target, 'pw-errors')) return;
-    if(!(await passOk(u, $('#pw-actual').value))) return marcarError('pw-actual', 'La contraseña actual no es correcta.');
-    u.passHash = await hashPass($('#pw-nueva').value);
-    save(); e.target.reset();
+    try{ await api('PUT', '/api/yo/clave', {actual:$('#pw-actual').value, nueva:$('#pw-nueva').value}); }
+    catch(err){
+      if(err.estado !== 400) return toast(err.message, {type:'error'});
+      return marcarError(/actual/i.test(err.message) ? 'pw-actual' : 'pw-nueva', err.message);
+    }
+    e.target.reset();
     toast('Contraseña actualizada.');
   });
 }

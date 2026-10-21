@@ -1,18 +1,26 @@
-/* MAISON KAGE · Crear cuenta */
+/* MAISON KAGE · Crear cuenta
+   La cuenta se crea en el servidor y queda con la sesión iniciada */
 const nextPage = safeNext(params.get('next'));
 if(params.get('next')) $('#rg-login').href = 'login.html?next=' + encodeURIComponent(nextPage);
 if(params.get('email')) $('#rg-email').value = params.get('email');
 
+/* Campo donde se muestra cada error que puede devolver el servidor */
+const campoDelError = msg => /correo/i.test(msg) ? 'rg-email' : /celular/i.test(msg) ? 'rg-tel' : /contraseña/i.test(msg) ? 'rg-pass' : 'rg-nombre';
+
+let creando = false;
 $('#rg-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if(!checkFilled(e.target, 'rg-errors')) return;
+  if(creando || !checkFilled(e.target, 'rg-errors')) return;
   const [nombre, ...ap] = $('#rg-nombre').value.trim().split(/\s+/);
-  const email = $('#rg-email').value.trim().toLowerCase();
-  const prev = state.accounts[email];
-  if(prev && prev.passHash) return marcarError('rg-email', 'Ya existe una cuenta con este correo. Inicia sesión.');
-  state.accounts[email] = Object.assign(prev || newAccount('', '', email),
-    {nombre, apellido:ap.join(' '), tel:$('#rg-tel').value.trim(), passHash: await hashPass($('#rg-pass').value)});
-  state.user = email; save();
-  flash('Cuenta creada. Bienvenido a Maison Kage.');
-  location.href = nextPage;
+  creando = true;
+  try{
+    await api('POST', '/api/registro', {nombre, apellido:ap.join(' '), correo:$('#rg-email').value.trim().toLowerCase(),
+      telefono:$('#rg-tel').value.trim(), clave:$('#rg-pass').value});
+    flash('Cuenta creada. Bienvenido a Maison Kage.');
+    location.href = nextPage;
+  }catch(err){
+    creando = false;
+    /* Los datos rechazados se marcan en su campo, la falta de conexión o los demasiados intentos van en un aviso */
+    [400, 409].includes(err.estado) ? marcarError(campoDelError(err.message), err.message) : toast(err.message, {type:'error'});
+  }
 });

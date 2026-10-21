@@ -1,10 +1,11 @@
 // Campos con límites (celular de 10 dígitos, tarjeta de 16), registro y perfil
-const { test, expect } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva, salir } = require('../soporte/fixtures');
 
 async function conCuenta(page) {
+  await cuentaNueva(page);
   await page.goto('index.html');
-  await page.evaluate(() => { state.accounts['a@b.com'] = newAccount('Ana', 'Ruiz', 'a@b.com'); state.user = 'a@b.com'; save(); });
 }
+const correoUnico = () => `ana+${Date.now()}${Math.random().toString(16).slice(2, 8)}@correo.com`;
 const pegar = (loc, texto) => loc.evaluate((el, t) => { el.focus(); const dt = new DataTransfer(); dt.setData('text/plain', t);
   el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); }, texto);
 
@@ -46,9 +47,10 @@ test('la tarjeta no pasa de 16 dígitos', async ({ page }) => {
   await expect(num).toHaveValue('4111 1111 1111 1111');
 });
 
-test('registro pide celular y guarda la contraseña con hash', async ({ page }) => {
+test('registro pide celular y la contraseña no queda en el navegador', async ({ page }) => {
+  const correo = correoUnico();
   await page.goto('registro.html');
-  await page.fill('#rg-nombre', 'Ana Ruiz'); await page.fill('#rg-email', 'a@b.com');
+  await page.fill('#rg-nombre', 'Ana Ruiz'); await page.fill('#rg-email', correo);
   await page.fill('#rg-pass', 'clave1234'); await page.fill('#rg-pass2', 'clave1234');
   await page.click('#rg-form button[type=submit]');
   await expect(page.locator('#rg-errors')).toBeVisible();
@@ -56,23 +58,28 @@ test('registro pide celular y guarda la contraseña con hash', async ({ page }) 
   await page.fill('#rg-tel', '0991234567'); await page.click('#rg-form button[type=submit]');
   await expect(page).toHaveURL(/perfil\.html/);
   await page.waitForLoadState('load');
-  const u = await page.evaluate(() => state.accounts['a@b.com']);
+  const u = await page.evaluate(() => currentUser());
+  expect(u.email).toBe(correo);
   expect(u.tel).toBe('0991234567');
-  expect(u.passHash).toMatch(/^[0-9a-f]{64}$/);
   expect(JSON.stringify(u)).not.toContain('clave1234');
+  // La contraseña la guarda el servidor, en la pestaña no queda nada de ella
+  expect(await page.evaluate(() => JSON.stringify(sessionStorage) + document.cookie)).not.toContain('clave1234');
 });
 
 async function registrar(page) {
+  const correo = correoUnico();
   await page.goto('registro.html');
-  await page.fill('#rg-nombre', 'Ana Ruiz'); await page.fill('#rg-email', 'a@b.com'); await page.fill('#rg-tel', '0991234567');
+  await page.fill('#rg-nombre', 'Ana Ruiz'); await page.fill('#rg-email', correo); await page.fill('#rg-tel', '0991234567');
   await page.fill('#rg-pass', 'clave1234'); await page.fill('#rg-pass2', 'clave1234'); await page.click('#rg-form button[type=submit]');
   await expect(page).toHaveURL(/perfil\.html/);
-  await expect(page.locator('#pf-email')).toHaveValue('a@b.com');
+  await expect(page.locator('#pf-email')).toHaveValue(correo);
+  return correo;
 }
 
 test('cambiar correo exige contraseña actual', async ({ page }) => {
   await registrar(page);
-  await page.fill('#pf-email', 'nuevo@b.com');
+  const nuevo = correoUnico();
+  await page.fill('#pf-email', nuevo);
   await expect(page.locator('#pf-pass')).toBeVisible();
   await page.click('#pf-form button[type=submit]');
   await expect(page.locator('#err-pf-pass')).toBeVisible();
@@ -80,19 +87,21 @@ test('cambiar correo exige contraseña actual', async ({ page }) => {
   await expect(page.locator('#err-pf-pass')).toHaveText('La contraseña actual no es correcta.');
   await page.fill('#pf-pass', 'clave1234'); await page.click('#pf-form button[type=submit]');
   await expect(page.locator('#toast-region')).toContainText('Cambios guardados');
-  expect(await page.evaluate(() => state.user)).toBe('nuevo@b.com');
+  expect(await page.evaluate(() => state.user)).toBe(nuevo);
+  await page.reload();
+  await expect(page.locator('#pf-email')).toHaveValue(nuevo);
 });
 
 test('cambiar contraseña y luego iniciar sesión con la nueva', async ({ page }) => {
-  await registrar(page);
+  const correo = await registrar(page);
   await page.fill('#pw-actual', 'mala-clave'); await page.fill('#pw-nueva', 'nueva12345'); await page.fill('#pw-nueva2', 'nueva12345');
   await page.click('#pw-form button[type=submit]');
   await expect(page.locator('#err-pw-actual')).toHaveText('La contraseña actual no es correcta.');
   await page.fill('#pw-actual', 'clave1234'); await page.click('#pw-form button[type=submit]');
   await expect(page.locator('#toast-region')).toContainText('Contraseña actualizada');
-  await page.evaluate(() => { state.user = null; save(); });
+  await salir(page);
   await page.goto('login.html');
-  await page.fill('#lg-email', 'a@b.com'); await page.fill('#lg-pass', 'clave1234'); await page.click('#lg-form button[type=submit]');
+  await page.fill('#lg-email', correo); await page.fill('#lg-pass', 'clave1234'); await page.click('#lg-form button[type=submit]');
   await expect(page.locator('#err-lg-pass')).toHaveText('El correo o la contraseña no son correctos.');
   await page.fill('#lg-pass', 'nueva12345'); await page.click('#lg-form button[type=submit]');
   await expect(page).toHaveURL(/perfil\.html/);

@@ -1,19 +1,23 @@
 /* MAISON KAGE · Iniciar sesión
-   Prototipo. Si el correo no tiene cuenta se crea con esa contraseña.
-   Si ya existe, la contraseña debe coincidir */
+   El servidor revisa el correo y la contraseña. Si el correo no tiene cuenta
+   se muestra el mismo mensaje que con la contraseña equivocada, así no se puede
+   saber qué correos están registrados. Para crear una está el enlace de abajo */
 const nextPage = safeNext(params.get('next'));
 if(params.get('next')) $('#lg-reg').href = 'registro.html?next=' + encodeURIComponent(nextPage);
 
+let entrando = false;
 $('#lg-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if(!checkFilled(e.target, 'lg-errors')) return;
-  const email = $('#lg-email').value.trim().toLowerCase(), pass = $('#lg-pass').value;
-  const u = state.accounts[email];
-  /* El mensaje no dice si falló el correo o la contraseña */
-  if(u && !(await passOk(u, pass))) return marcarError('lg-pass', 'El correo o la contraseña no son correctos.');
-  if(!u) state.accounts[email] = Object.assign(newAccount(nameFromEmail(email), '', email), {passHash: await hashPass(pass)});
-  else if(!u.passHash) u.passHash = await hashPass(pass);
-  state.user = email; save();
-  flash(`Sesión iniciada. Hola, ${state.accounts[email].nombre}.`);
-  location.href = nextPage;
+  if(entrando || !checkFilled(e.target, 'lg-errors')) return;
+  entrando = true;
+  try{
+    const u = await api('POST', '/api/login', {correo:$('#lg-email').value.trim().toLowerCase(), clave:$('#lg-pass').value});
+    flash(`Sesión iniciada. Hola, ${u.nombre}.`);
+    /* Al cargar la página siguiente js/sesion.js ya trae la cuenta */
+    location.href = nextPage;
+  }catch(err){
+    entrando = false;
+    /* Sin conexión o con demasiados intentos no tiene sentido marcar la contraseña */
+    [400, 401].includes(err.estado) ? marcarError('lg-pass', err.message) : toast(err.message, {type:'error'});
+  }
 });

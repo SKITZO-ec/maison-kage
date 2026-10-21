@@ -7,7 +7,7 @@ import { Router } from 'express';
 import { ErrorUsuario } from '../reglas.js';
 import { exigirSesion } from '../sesion.js';
 
-async function listar(pool, usuId){
+export async function listarFavoritos(pool, usuId){
   const { rows } = await pool.query(
     `SELECT P.Pro_slug FROM Favorito F JOIN Producto P ON P.Pro_id = F.Pro_id
       WHERE F.Usu_id = $1 ORDER BY F.Fav_fecha ASC, F.Fav_id ASC`, [usuId]);
@@ -27,7 +27,7 @@ export function rutasFavoritos(pool){
 
   router.get('/favoritos', async (req, res, next) => {
     try{
-      res.json(await listar(pool, req.usuario.id));
+      res.json(await listarFavoritos(pool, req.usuario.id));
     }catch(e){ next(e); }
   });
 
@@ -36,7 +36,7 @@ export function rutasFavoritos(pool){
       const proId = await buscarPerfume(pool, req.params.slug);
       await pool.query(
         'INSERT INTO Favorito (Usu_id, Pro_id) VALUES ($1, $2) ON CONFLICT (Usu_id, Pro_id) DO NOTHING', [req.usuario.id, proId]);
-      res.json(await listar(pool, req.usuario.id));
+      res.json(await listarFavoritos(pool, req.usuario.id));
     }catch(e){ next(e); }
   });
 
@@ -44,7 +44,7 @@ export function rutasFavoritos(pool){
     try{
       const proId = await buscarPerfume(pool, req.params.slug);
       await pool.query('DELETE FROM Favorito WHERE Usu_id = $1 AND Pro_id = $2', [req.usuario.id, proId]);
-      res.json(await listar(pool, req.usuario.id));
+      res.json(await listarFavoritos(pool, req.usuario.id));
     }catch(e){ next(e); }
   });
 

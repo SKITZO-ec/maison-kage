@@ -26,7 +26,7 @@ const aDireccion = f => ({
   principal: f.dir_principal
 });
 
-async function listar(db, usuId){
+export async function listarDirecciones(db, usuId){
   const { rows } = await db.query(`SELECT ${COLUMNAS} FROM Direccion WHERE Usu_id = $1 ${ORDEN}`, [usuId]);
   return rows.map(aDireccion);
 }
@@ -43,7 +43,7 @@ export function rutasDirecciones(pool){
 
   router.get('/direcciones', async (req, res, next) => {
     try{
-      res.json(await listar(pool, req.usuario.id));
+      res.json(await listarDirecciones(pool, req.usuario.id));
     }catch(e){ next(e); }
   });
 
@@ -81,7 +81,7 @@ export function rutasDirecciones(pool){
         const { rowCount } = await db.query(
           'UPDATE Direccion SET Dir_principal = TRUE WHERE Dir_id = $1 AND Usu_id = $2', [id, req.usuario.id]);
         if (!rowCount) throw new ErrorUsuario(MSG_NO_ENCONTRADA, 404);
-        return listar(db, req.usuario.id);
+        return listarDirecciones(db, req.usuario.id);
       });
       res.json(lista);
     }catch(e){ next(e); }
@@ -101,7 +101,7 @@ export function rutasDirecciones(pool){
               WHERE Dir_id = (SELECT Dir_id FROM Direccion WHERE Usu_id = $1 ORDER BY Dir_id ASC LIMIT 1)`,
             [req.usuario.id]);
         }
-        return listar(db, req.usuario.id);
+        return listarDirecciones(db, req.usuario.id);
       });
       res.json(lista);
     }catch(e){ next(e); }

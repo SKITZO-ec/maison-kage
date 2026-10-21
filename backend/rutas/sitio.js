@@ -6,8 +6,16 @@
 import express, { Router } from 'express';
 import path from 'node:path';
 import { leerProductos } from './productos.js';
+import { listarFavoritos } from './favoritos.js';
+import { listarDirecciones } from './direcciones.js';
+import { leerSesion } from '../sesion.js';
 
 const raiz = path.resolve(import.meta.dirname, '..', '..');
+
+/* JSON listo para ir dentro de un script. JSON.stringify ya escapa las comillas
+   y como va en un archivo aparte un </script> no corta nada, pero los separadores
+   U+2028 y U+2029 se escapan igual para que ningún navegador viejo los lea como salto de línea */
+const enScript = valor => JSON.stringify(valor).replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
 export function rutasSitio(pool){
   const router = Router();
@@ -18,6 +26,21 @@ export function rutasSitio(pool){
       const lista = await leerProductos(pool);
       res.type('application/javascript').set('Cache-Control', 'no-store')
          .send(`/* Catálogo leído de PostgreSQL */\nconst PRODUCTS = ${JSON.stringify(lista)};\n`);
+    }catch(e){ next(e); }
+  });
+
+  /* La sesión que leen todas las páginas, con la cuenta, sus favoritos y sus direcciones.
+     Nunca se guarda en caché porque cambia al entrar o salir. Si la pide otro sitio
+     se le da la versión sin sesión, así no puede leer los datos con una etiqueta script */
+  router.get('/js/sesion.js', leerSesion(pool), async (req, res, next) => {
+    try{
+      const u = req.get('Sec-Fetch-Site') === 'cross-site' ? null : req.usuario;
+      const [favoritos, direcciones] = u
+        ? await Promise.all([listarFavoritos(pool, u.id), listarDirecciones(pool, u.id)])
+        : [[], []];
+      const usuario = u ? { nombre: u.nombre, apellido: u.apellido, correo: u.correo, telefono: u.telefono ?? null } : null;
+      res.type('application/javascript').set('Cache-Control', 'no-store')
+         .send(`/* Sesión leída del servidor */\nconst SESION = {\n  usuario: ${enScript(usuario)},\n  favoritos: ${enScript(favoritos)},\n  direcciones: ${enScript(direcciones)}\n};\n`);
     }catch(e){ next(e); }
   });
 

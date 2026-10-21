@@ -35,7 +35,7 @@ export async function iniciarApp(opciones = {}){
 export function cliente(base){
   const cookies = new Map();
 
-  async function enviar(metodo, ruta, cuerpo){
+  async function enviar(metodo, ruta, cuerpo, extra = {}){
     /* El servidor deja la cookie mk_csrf en cualquier petición, así que la primera
        que no sea GET empieza con un GET para que el CSRF ya esté disponible */
     if (metodo !== 'GET' && !cookies.has('mk_csrf')) await enviar('GET', '/api/yo');
@@ -43,6 +43,7 @@ export function cliente(base){
     if (cookies.size) cabeceras.Cookie = [...cookies].map(([k, v]) => `${k}=${v}`).join('; ');
     if (cookies.has('mk_csrf')) cabeceras['X-CSRF'] = cookies.get('mk_csrf');
     if (cuerpo !== undefined) cabeceras['Content-Type'] = 'application/json';
+    Object.assign(cabeceras, extra);
     const r = await fetch(base + ruta, {
       method: metodo,
       headers: cabeceras,
@@ -60,11 +61,11 @@ export function cliente(base){
     const texto = await r.text();
     let datos = texto;
     try{ datos = texto ? JSON.parse(texto) : null; }catch{ /* no era JSON */ }
-    return { status: r.status, cuerpo: datos };
+    return { status: r.status, cuerpo: datos, cabeceras: r.headers };
   }
 
   return {
-    get: ruta => enviar('GET', ruta),
+    get: (ruta, extra) => enviar('GET', ruta, undefined, extra),
     post: (ruta, cuerpo) => enviar('POST', ruta, cuerpo ?? {}),
     put: (ruta, cuerpo) => enviar('PUT', ruta, cuerpo ?? {}),
     patch: (ruta, cuerpo) => enviar('PATCH', ruta, cuerpo ?? {}),

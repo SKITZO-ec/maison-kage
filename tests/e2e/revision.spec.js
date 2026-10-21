@@ -1,9 +1,10 @@
 // Pruebas de los hallazgos de la revisión final
-const { test, expect } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva } = require('../soporte/fixtures');
 
 async function conCuentaYCarrito(page, lineas = [['khamrah', 'frasco', 50, 2]]) {
+  await cuentaNueva(page);
   await page.goto('index.html');
-  await page.evaluate(ls => { state.accounts['a@b.com'] = newAccount('Ana', 'Ruiz', 'a@b.com'); state.user = 'a@b.com'; ls.forEach(l => addToCart(...l, true)); save(); }, lineas);
+  await page.evaluate(ls => { ls.forEach(l => addToCart(...l, true)); save(); }, lineas);
 }
 
 for (const w of [320, 375, 800, 1024]) test(`encabezado con carrito lleno en ${w} px`, async ({ page }) => {
@@ -134,8 +135,9 @@ test('el texto de Decants coincide con agregar desde la tarjeta', async ({ page 
 });
 
 test('la confirmación en verificación avisa del correo', async ({ page }) => {
+  await cuentaNueva(page);
   await page.goto('index.html');
-  await page.evaluate(() => { state.accounts['a@b.com'] = newAccount('Ana', 'Ruiz', 'a@b.com'); state.user = 'a@b.com';
+  await page.evaluate(() => {
     state.lastOrder = { num: 'MK-1002', fecha: '18 oct 2026', estado: 'Pago en verificación', metodo: 'Deuna', items: [{ nombre: 'Asad', desc: 'Frasco 50 ml', qty: 1, unit: 26 }],
       total: 29.5, email: 'a@b.com', entrega: 'envio', guia: null, envio: { nombre: 'Ana Ruiz', dir: 'Av. Amazonas', ciudad: 'Quito', tel: '0991234567' } }; save(); });
   await page.goto('confirmacion.html');

@@ -1,5 +1,5 @@
 // Cada página del sitio carga con su encabezado y sin errores de JavaScript
-const { test, expect } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva } = require('../soporte/fixtures');
 
 const PAGINAS = ['index','catalogo','buscar','producto','carrito','checkout','confirmacion','login','registro','recuperar','perfil','direcciones','favoritos','pedidos','ayuda','404'];
 
@@ -23,8 +23,9 @@ for (const url of ['catalogo.html?decant=1', 'catalogo.html?familia=gourmand&ori
   });
 
 test('checkout con carrito carga sin errores', async ({ page }) => {
+  await cuentaNueva(page);
   await page.goto('index.html');
-  await page.evaluate(() => { state.accounts['a@b.com'] = newAccount('Ana','Ruiz','a@b.com'); state.user = 'a@b.com'; addToCart('khamrah','frasco',50,1,true); addToCart('khamrah','decant',5,2,true); });
+  await page.evaluate(() => { addToCart('khamrah','frasco',50,1,true); addToCart('khamrah','decant',5,2,true); });
   await page.goto('checkout.html');
   await expect(page.locator('#co-form')).toBeVisible();
   expect(page.erroresConsola).toEqual([]);

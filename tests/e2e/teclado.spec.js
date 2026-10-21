@@ -1,6 +1,6 @@
 // Prueba de aceptación. La compra completa se hace solo con el teclado,
 // sin click, fill ni focus, en los tres anchos de pantalla
-const { test, expect } = require('../soporte/fixtures');
+const { test, expect, cuentaNueva } = require('../soporte/fixtures');
 
 /* Presiona Tab hasta que el elemento con foco cumpla la condición.
    En cada paso revisa que el foco esté visible en la pantalla */
@@ -26,6 +26,8 @@ const id = i => new Function(`return document.activeElement && document.activeEl
 
 test('compra completa solo con teclado', async ({ page }) => {
   test.setTimeout(90000);
+  /* La cuenta se crea antes por la API y queda sin sesión, así el recorrido pasa por el login */
+  const { correo, clave } = await cuentaNueva(page, { sesion: false });
   await page.goto('index.html');
 
   await tabHasta(page, () => !!document.activeElement?.matches('#home-ofertas h3 a') && document.activeElement.textContent.includes('Khamrah'), 'la tarjeta de Khamrah');
@@ -45,11 +47,11 @@ test('compra completa solo con teclado', async ({ page }) => {
   await llega(page, /login\.html\?next=checkout\.html/);
 
   await tabHasta(page, id('lg-email'), 'el correo del login');
-  await page.keyboard.type('ana@correo.com');
+  await page.keyboard.type(correo);
   await page.keyboard.press('Tab');
-  await page.keyboard.type('clave1234');
+  await page.keyboard.type(clave);
   await page.keyboard.press('Enter');
-  await llega(page, /checkout\.html/);
+  await llega(page, /\/checkout\.html$/);
 
   await tabHasta(page, id('co-tel'), 'el celular');
   await page.keyboard.type('0991234567');
