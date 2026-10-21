@@ -32,7 +32,7 @@ test('compra completa solo con teclado', async ({ page }) => {
 
   await tabHasta(page, () => !!document.activeElement?.matches('#home-ofertas h3 a') && document.activeElement.textContent.includes('Khamrah'), 'la tarjeta de Khamrah');
   await page.keyboard.press('Enter');
-  await llega(page, /producto\.html\?id=khamrah/);
+  await llega(page, /\/perfumes\/khamrah$/);
 
   await tabHasta(page, id('pd-add'), 'Agregar al carrito');
   await page.keyboard.press('Enter');

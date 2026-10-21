@@ -5,7 +5,7 @@ test('no existe el enlace Catálogo y Perfumes tiene Ver todos', async ({ page }
   await page.goto('index.html');
   await expect(page.locator('header a', { hasText: /^\s*Catálogo/ })).toHaveCount(0);
   await expect(page.locator('footer a', { hasText: /^\s*Catálogo\s*$/ })).toHaveCount(0);
-  await expect(page.locator('#mega a[href="catalogo.html"]', { hasText: 'Ver todos los perfumes' })).toHaveCount(1);
+  await expect(page.locator('#mega a[href="/catalogo.html"]', { hasText: 'Ver todos los perfumes' })).toHaveCount(1);
 });
 
 test('el menú Perfumes agrupa por público, origen, familia y ocasión', async ({ page }, info) => {
@@ -13,7 +13,7 @@ test('el menú Perfumes agrupa por público, origen, familia y ocasión', async 
   await page.goto('index.html');
   await page.locator('#btn-perfumes').click();
   for (const g of ['Por público', 'Por origen', 'Familia olfativa', 'Ocasión', 'Destacados']) await expect(page.locator('#mega')).toContainText(g);
-  await expect(page.locator('#mega a[href="catalogo.html?familia=cuero"]')).toHaveCount(1);
+  await expect(page.locator('#mega a[href="/catalogo.html?familia=cuero"]')).toHaveCount(1);
 });
 
 test('en móvil el menú agrupa las categorías en desplegables', async ({ page }, info) => {
@@ -22,7 +22,7 @@ test('en móvil el menú agrupa las categorías en desplegables', async ({ page 
   await page.locator('#btn-menu').click();
   await expect(page.locator('#dd-menu details')).toHaveCount(4);
   await expect(page.locator('#dd-menu summary').first()).toHaveText('Por público');
-  await expect(page.locator('#dd-menu a[href="catalogo.html"]', { hasText: 'Ver todos los perfumes' })).toBeVisible();
+  await expect(page.locator('#dd-menu a[href="/catalogo.html"]', { hasText: 'Ver todos los perfumes' })).toBeVisible();
 });
 
 test('filtro por familia muestra 10', async ({ page }) => {

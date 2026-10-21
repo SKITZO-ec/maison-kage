@@ -39,8 +39,8 @@ function renderCart(){
       <aside class="${TW.summary}" aria-labelledby="h-sum">
         <h2 class="${TW.summaryTitle}" id="h-sum">Resumen</h2>
         ${summaryRows(t)}
-        <a class="${TW.summaryBtnGold}" href="checkout.html">Ir al checkout</a>
-        <a class="${TW.summaryBtnOutline}" href="catalogo.html">Seguir comprando</a>
+        <a class="${TW.summaryBtnGold}" href="/checkout.html">Ir al checkout</a>
+        <a class="${TW.summaryBtnOutline}" href="/catalogo.html">Seguir comprando</a>
         <p class="${TW.secure}">${ICON.shield} Pago seguro con tarjeta o con Deuna</p>
       </aside>
     </div>`;

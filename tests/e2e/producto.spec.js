@@ -47,7 +47,7 @@ test('una sola presentación no muestra selector', async ({ page }) => {
 
 test('similares priorizan la misma familia', async ({ page }) => {
   await page.goto('producto.html?id=libre');
-  const ids = await page.locator('#h-rel ~ div article h3 a').evaluateAll(as => as.map(a => new URL(a.href).searchParams.get('id')));
+  const ids = await page.locator('#h-rel ~ div article h3 a').evaluateAll(as => as.map(a => new URL(a.href).pathname.replace('/perfumes/', '')));
   expect(ids.length).toBe(4);
   expect(await page.evaluate(ids => ids.every(id => byId(id).familia === 'floral'), ids)).toBe(true);
   expect(ids).not.toContain('libre');

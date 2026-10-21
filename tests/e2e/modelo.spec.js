@@ -28,7 +28,7 @@ test('agregar frasco respeta el stock de esa presentación', async ({ page }) =>
 test('precio desde y url del producto', async ({ page }) => {
   await page.goto('index.html');
   const r = await page.evaluate(() => [precioDesde(byId('khamrah')), urlProducto('khamrah'), urlProducto('khamrah', true)]);
-  expect(r).toEqual([27.2, 'producto.html?id=khamrah', 'producto.html?id=khamrah&formato=decant']);
+  expect(r).toEqual([27.2, '/perfumes/khamrah', '/perfumes/khamrah?formato=decant']);
 });
 
 test('compra completa sigue funcionando', async ({ page }) => {

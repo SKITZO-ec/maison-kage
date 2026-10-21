@@ -4,7 +4,7 @@
    saber qué correos están registrados. Para crear una está el enlace de abajo */
 if(!CATALOGO_CAIDO){
 const nextPage = safeNext(params.get('next'));
-if(params.get('next')) $('#lg-reg').href = 'registro.html?next=' + encodeURIComponent(nextPage);
+if(params.get('next')) $('#lg-reg').href = '/registro.html?next=' + encodeURIComponent(nextPage);
 
 let entrando = false;
 $('#lg-form').addEventListener('submit', async e => {
@@ -17,7 +17,7 @@ $('#lg-form').addEventListener('submit', async e => {
     const fallo = await pasarCarritoALaCuenta();
     flash(fallo || `Sesión iniciada. Hola, ${u.nombre}.`, fallo ? {type:'error'} : {});
     /* Al cargar la página siguiente js/sesion.js ya trae la cuenta y su carrito */
-    location.href = nextPage;
+    location.href = '/' + nextPage;
   }catch(err){
     entrando = false;
     /* Sin conexión o con demasiados intentos no tiene sentido marcar la contraseña */

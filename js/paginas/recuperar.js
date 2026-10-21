@@ -3,7 +3,7 @@
    se muestra el formulario de la contraseña nueva */
 if(!CATALOGO_CAIDO){
 const codigo = params.get('codigo');
-const pedirOtro = `<a class="${TW.btnText} inline-block mt-[14px]" href="recuperar.html">Pedir un enlace nuevo</a>`;
+const pedirOtro = `<a class="${TW.btnText} inline-block mt-[14px]" href="/recuperar.html">Pedir un enlace nuevo</a>`;
 
 /* ---------- Pedir el enlace ---------- */
 function pedirEnlace(){
@@ -16,7 +16,7 @@ function pedirEnlace(){
       try{ await api('POST', '/api/recuperar', {correo}); }
       catch(err){ return toast(err.message, {type:'error'}); }
       $('#rc-body').innerHTML = `<div class="${TW.okBox}" role="status" tabindex="-1" id="rc-ok"><strong>Revisa tu correo</strong><p>Si el correo tiene una cuenta, te enviamos un enlace para crear una nueva contraseña. El enlace vence en 30 minutos. Revisa también la carpeta de spam.</p></div>
-        <a class="${TW.btnText} inline-block mt-[14px]" href="recuperar.html">Usar otro correo</a>`;
+        <a class="${TW.btnText} inline-block mt-[14px]" href="/recuperar.html">Usar otro correo</a>`;
       $('#rc-ok').focus();
     });
   });
@@ -51,7 +51,7 @@ function pedirClaveNueva(){
         return $('#rc-fallo').focus();
       }
       $('#rc-body').innerHTML = `<div class="${TW.okBox}" role="status" tabindex="-1" id="rc-ok"><strong>Tu contraseña se cambió. Ya puedes iniciar sesión.</strong></div>
-        <a class="${TW.btnGold} w-full mt-[14px]" href="login.html">Iniciar sesión</a>`;
+        <a class="${TW.btnGold} w-full mt-[14px]" href="/login.html">Iniciar sesión</a>`;
       $('#rc-ok').focus();
     });
   });

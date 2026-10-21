@@ -161,7 +161,7 @@ test('un enlace ya usado muestra el aviso y el camino para pedir otro', async ({
   }
   await expect(page.locator('#err-rc-nueva, #rc-errors, #rc-body').first()).toBeVisible();
   await expect(page.locator('#rc-body')).toContainText('El enlace venció o ya se usó. Pide uno nuevo.');
-  await expect(page.getByRole('link', { name: 'Pedir un enlace nuevo' })).toHaveAttribute('href', 'recuperar.html');
+  await expect(page.getByRole('link', { name: 'Pedir un enlace nuevo' })).toHaveAttribute('href', '/recuperar.html');
 });
 
 test('dos claves distintas muestran el error en la segunda sin llamar a la API', async ({ page }) => {

@@ -4,7 +4,7 @@
 if(!CATALOGO_CAIDO){
 const numPedido = params.get('n') || '';
 const sinPedido = () => {
-  $('#app').innerHTML = `<div class="${TW.empty}"><div class="${TW.emptyIcon}">${ICON.box}</div><h1 class="${TW.emptyTitle}">No hay un pedido reciente</h1><p class="${TW.emptyP}">Cuando confirmes un pago verás aquí el resumen de tu pedido.</p><div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Ver los perfumes</a></div></div>`;
+  $('#app').innerHTML = `<div class="${TW.empty}"><div class="${TW.emptyIcon}">${ICON.box}</div><h1 class="${TW.emptyTitle}">No hay un pedido reciente</h1><p class="${TW.emptyP}">Cuando confirmes un pago verás aquí el resumen de tu pedido.</p><div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="/catalogo.html">Ver los perfumes</a></div></div>`;
 };
 
 async function cargarPedido(){
@@ -26,7 +26,7 @@ function pintarPedido(o){
   const nombre = esc(o.envio.nombre.split(' ')[0]);
   const dt = TW.dt, dd = TW.dd;
   /* Para comprar hace falta cuenta, así que siempre se puede seguir el pedido desde Mis pedidos */
-  const nextBtn = `<a class="${TW.btnGold}" href="pedidos.html">Ver mis pedidos</a>`;
+  const nextBtn = `<a class="${TW.btnGold}" href="/pedidos.html">Ver mis pedidos</a>`;
   document.title = (verif ? 'Pedido recibido' : 'Pedido confirmado') + ' | Maison Kage';
   $('#app').innerHTML = `<div class="${TW.confirm}">
     <ol class="${TW.stepsCenter}" aria-label="Pasos de la compra">
@@ -57,7 +57,7 @@ function pintarPedido(o){
       </dl>
       ${entregaHTML(o)}
     </div>
-    <div class="${TW.btnRowCenter}">${nextBtn}<a class="${TW.btnOutline}" href="index.html">Seguir comprando</a></div>
+    <div class="${TW.btnRowCenter}">${nextBtn}<a class="${TW.btnOutline}" href="/index.html">Seguir comprando</a></div>
   </div>`;
 }
 

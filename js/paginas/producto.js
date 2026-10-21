@@ -16,7 +16,7 @@ const OCASION_TXT = {'Oficina':'la oficina','Diario':'el día a día','Citas':'c
 /* Nombre accesible de cada foto, por ejemplo Frasco de frente de Khamrah de Lattafa */
 const fotoLabel = v => v+' de '+p.nombre+' de '+p.marca;
 let pd;
-if(!p) location.replace('404.html');
+if(!p) location.replace('/404.html');
 else {
   /* Si piden el decant de un perfume que no tiene, la dirección pasa a la del frasco */
   if(params.get('formato')==='decant' && !ES_DECANT) history.replaceState(null, '', urlFrasco(p.id));
@@ -76,15 +76,15 @@ function renderProduct(){
           <button type="button" class="${TW.pdBtnGold}" data-action="pd-buy" id="pd-buy">Comprar ahora</button>
           ${favBtn(p, true)}
         </div>`;
-  const ocasiones = p.ocasion.map(o => `<li><a class="${TW.tagLink}" href="catalogo.html?ocasion=${encodeURIComponent(o)}" aria-label="Ver perfumes para ${OCASION_TXT[o]||o}">${o}</a></li>`).join('');
+  const ocasiones = p.ocasion.map(o => `<li><a class="${TW.tagLink}" href="/catalogo.html?ocasion=${encodeURIComponent(o)}" aria-label="Ver perfumes para ${OCASION_TXT[o]||o}">${o}</a></li>`).join('');
   const ds = decants(p);
 
   $('#app').innerHTML = `
     <nav aria-label="Migas de pan"><ol class="${TW.crumbs}">
-      <li class="${cr}"><a class="underline" href="index.html">Inicio</a></li>
+      <li class="${cr}"><a class="underline" href="/index.html">Inicio</a></li>
       ${ES_DECANT
-        ? `<li class="${cr}"><a class="underline" href="catalogo.html?decant=1">Decants</a></li>`
-        : `<li class="${cr}"><a class="underline" href="catalogo.html">Perfumes</a></li><li class="${cr}"><a class="underline" href="catalogo.html?origen=${p.origen}">${ORIGENES[p.origen]}</a></li>`}
+        ? `<li class="${cr}"><a class="underline" href="/decants">Decants</a></li>`
+        : `<li class="${cr}"><a class="underline" href="/catalogo.html">Perfumes</a></li><li class="${cr}"><a class="underline" href="/catalogo.html?origen=${p.origen}">${ORIGENES[p.origen]}</a></li>`}
       <li class="${cr}" aria-current="page">${esc(p.nombre)}</li></ol></nav>
     <div class="${TW.pd}">
       <div>
@@ -110,7 +110,7 @@ function renderProduct(){
           <li class="${TW.perk}">${ICON.check} Pago con tarjeta o con Deuna</li>
         </ul>
         ${ES_DECANT && frascos(p).length ? `<p class="${TW.crossLink}">¿Te gustó? <a class="underline font-semibold" href="${urlFrasco(p.id)}">Ver el frasco completo de ${esc(p.nombre)}</a></p>` : ''}
-        <p class="${TW.small} mt-4">¿Quieres que dure más en tu piel? <a class="underline" href="ayuda.html#modo-uso">Mira cómo aplicarlo</a>.</p>
+        <p class="${TW.small} mt-4">¿Quieres que dure más en tu piel? <a class="underline" href="/ayuda.html#modo-uso">Mira cómo aplicarlo</a>.</p>
       </div>
     </div>
 
@@ -200,7 +200,7 @@ document.addEventListener('click', e => {
   if(a==='pd-qty'){ pd.qty = Math.max(1, pd.qty + +t.dataset.d); updatePD(); }
   if(a==='pd-add' || a==='pd-buy'){
     if(addToCart(p.id, KIND, pd.ml, pd.qty, a==='pd-buy')){
-      if(a==='pd-buy') location.href = 'checkout.html';
+      if(a==='pd-buy') location.href = '/checkout.html';
       else { pd.qty = 1; updatePD(); }
     }
   }

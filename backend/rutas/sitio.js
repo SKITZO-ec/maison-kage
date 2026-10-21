@@ -65,7 +65,25 @@ export function rutasSitio(pool){
   router.get(/^\/([a-z0-9-]+\.html)?$/, (req, res) => {
     res.sendFile(path.join(raiz, req.params[0] || 'index.html'));
   });
-  router.use((req, res) => res.status(404).sendFile(path.join(raiz, '404.html')));
+
+  /* URLs limpias. La ficha de un perfume solo se entrega si el slug existe y está activo,
+     así un perfume que no existe responde 404 de verdad y no una ficha vacía.
+     Si la base falla se entrega la ficha igual, y la página muestra el aviso con Reintentar */
+  const noEncontrada = res => res.status(404).sendFile(path.join(raiz, '404.html'));
+  router.get('/perfumes/:slug', async (req, res) => {
+    const slug = req.params.slug;
+    if (!/^[a-z0-9-]+$/.test(slug)) return noEncontrada(res);
+    try{
+      const { rowCount } = await pool.query('SELECT 1 FROM Producto WHERE Pro_slug = $1 AND Pro_activo', [slug]);
+      if (!rowCount) return noEncontrada(res);
+    }catch(e){
+      console.error('No se pudo revisar el perfume', e.message);
+    }
+    res.sendFile(path.join(raiz, 'producto.html'));
+  });
+  router.get(['/ofertas', '/decants'], (req, res) => res.sendFile(path.join(raiz, 'catalogo.html')));
+
+  router.use((req, res) => noEncontrada(res));
 
   return router;
 }

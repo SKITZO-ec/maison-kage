@@ -24,9 +24,27 @@ const presOf = (p, tipo, ml) => p ? p.pres.find(x => x.tipo===tipo && x.ml===ml)
 const precioFinal = (p, pres) => pres.tipo==='frasco' && p.oferta ? Math.round(pres.precio * (100 - p.oferta)) / 100 : pres.precio;
 /* Precio más bajo con el que se puede llevar el perfume */
 const precioDesde = p => { const f = frascos(p); return f.length ? Math.min(...f.map(x => precioFinal(p, x))) : Math.min(...decants(p).map(x => x.precio)); };
-const urlProducto = (id, decant=false) => `producto.html?id=${id}${decant ? '&formato=decant' : ''}`;
-const params = new URLSearchParams(location.search);
-const PAGE = decodeURIComponent(location.pathname.split('/').pop()) || 'index.html';
+const urlProducto = (id, decant=false) => `/perfumes/${id}${decant ? '?formato=decant' : ''}`;
+/* ---------- URLs limpias ----------
+   /perfumes/<slug> es la ficha, /ofertas y /decants son el catálogo con ese filtro.
+   Devuelve la página que se está viendo y los parámetros que trae la dirección limpia.
+   Cualquier otra ruta da la página del último tramo como siempre */
+function rutaLimpia(pathname){
+  const tramos = String(pathname || '').split('/').filter(Boolean).map(t => { try{ return decodeURIComponent(t); }catch(e){ return t; } });
+  if(tramos.length===2 && tramos[0]==='perfumes') return {pagina:'producto.html', extra:{id:tramos[1]}};
+  if(tramos.length===1 && tramos[0]==='ofertas') return {pagina:'catalogo.html', extra:{oferta:'1'}};
+  if(tramos.length===1 && tramos[0]==='decants') return {pagina:'catalogo.html', extra:{decant:'1'}};
+  return {pagina: tramos.pop() || 'index.html', extra:{}};
+}
+/* Los parámetros de la dirección limpia más los reales. Si los dos traen el mismo, gana el real */
+function paramsDe(pathname, search){
+  const real = new URLSearchParams(search), todos = new URLSearchParams(rutaLimpia(pathname).extra);
+  real.forEach((v, k) => todos.delete(k));
+  real.forEach((v, k) => todos.append(k, v));
+  return todos;
+}
+const params = paramsDe(location.pathname, location.search);
+const PAGE = rutaLimpia(location.pathname).pagina;
 
 const ICON = {
   heart:'<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-4.5-9.3-9A5.3 5.3 0 0 1 12 6a5.3 5.3 0 0 1 9.3 6C19 16.5 12 21 12 21z"/></svg>',
@@ -59,7 +77,7 @@ function ph(label, variant='ph', decorative=false){
    Cada perfume tiene su carpeta en source/img/productos/<id>/ con frente, perfil, caja y decant.
    Las fotos comunes de los decants van sueltas en source/img/productos/.
    Si una foto no existe, se queda el recuadro gris con la X. */
-const FOTO_DIR = 'source/img/productos/';
+const FOTO_DIR = '/source/img/productos/';
 const FOTO_EXT = ['webp', 'jpg', 'jpeg', 'png', 'avif'];
 const FOTO_COMUN = ['decant-atomizador', 'decant-etiqueta'];
 function fotoSrc(p, vista){
@@ -199,7 +217,7 @@ function addToCart(id, kind, ml, qty, silent=false){
   if(line) line.qty += qty; else state.cart.push({id, kind, ml, qty});
   guardarCarrito(); updateCartBadge();
   document.dispatchEvent(new CustomEvent('mk:carrito'));
-  if(!silent) toast(`Agregado al carrito: ${p.nombre}, ${kind==='decant'?'decant ':'frasco '}${ml} ml`, {link:['Ver carrito','carrito.html']});
+  if(!silent) toast(`Agregado al carrito: ${p.nombre}, ${kind==='decant'?'decant ':'frasco '}${ml} ml`, {link:['Ver carrito','/carrito.html']});
   return true;
 }
 /* Al iniciar sesión o crear la cuenta, lo que estaba en el carrito sin sesión se suma al de la cuenta.
@@ -225,7 +243,7 @@ function emptyCartHTML(h='h1'){
     <div class="${TW.emptyIcon}">${ICON.bag}</div>
     <${h} class="${TW.emptyTitle}">Tu carrito está vacío</${h}>
     <p class="${TW.emptyP}">Todavía no agregas perfumes. Explora los perfumes o empieza con un decant de 2 ml para conocer una fragancia sin gastar en el frasco.</p>
-    <div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Explorar los perfumes</a><a class="${TW.btnOutline}" href="catalogo.html?decant=1">Ver decants</a></div>
+    <div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="/catalogo.html">Explorar los perfumes</a><a class="${TW.btnOutline}" href="/decants">Ver decants</a></div>
   </div>`;
 }
 function summaryRows(t){
@@ -381,18 +399,18 @@ function renderAccountMenu(){
   const it = TW.ddItem;
   dd.innerHTML = u ? `
     <p class="${TW.ddHead}">Hola, ${esc(u.nombre)}</p>
-    <a class="${it}" href="perfil.html">${ICON.user} Mi perfil</a>
-    <a class="${it}" href="pedidos.html">${ICON.box} Mis pedidos</a>
-    <a class="${it}" href="favoritos.html">${ICON.heartLine} Favoritos</a>
-    <a class="${it}" href="direcciones.html">${ICON.pin} Direcciones de envío</a>
+    <a class="${it}" href="/perfil.html">${ICON.user} Mi perfil</a>
+    <a class="${it}" href="/pedidos.html">${ICON.box} Mis pedidos</a>
+    <a class="${it}" href="/favoritos.html">${ICON.heartLine} Favoritos</a>
+    <a class="${it}" href="/direcciones.html">${ICON.pin} Direcciones de envío</a>
     <hr class="${TW.ddHr}">
-    <a class="${it}" href="ayuda.html">${ICON.help} Ayuda y soporte</a>
+    <a class="${it}" href="/ayuda.html">${ICON.help} Ayuda y soporte</a>
     <button class="${it}" type="button" data-action="logout">${ICON.out} Cerrar sesión</button>` : `
     <p class="${TW.ddHead}">Bienvenido a Maison Kage</p>
-    <a class="${it}" href="login.html">${ICON.user} Iniciar sesión</a>
-    <a class="${it}" href="registro.html">${ICON.check} Crear cuenta</a>
+    <a class="${it}" href="/login.html">${ICON.user} Iniciar sesión</a>
+    <a class="${it}" href="/registro.html">${ICON.check} Crear cuenta</a>
     <hr class="${TW.ddHr}">
-    <a class="${it}" href="ayuda.html">${ICON.help} Ayuda y soporte</a>`;
+    <a class="${it}" href="/ayuda.html">${ICON.help} Ayuda y soporte</a>`;
   $('#btn-account').setAttribute('aria-label', u ? `Mi cuenta, sesión de ${u.nombre}` : 'Mi cuenta, sin sesión iniciada');
 }
 /* Nombre y correo en la barra lateral de Mi cuenta */
@@ -400,11 +418,13 @@ function renderAccUser(){
   const box = $('#acc-user'), u = currentUser();
   if(box && u) box.innerHTML = `<strong class="${TW.accUserName}">${esc(u.nombre)} ${esc(u.apellido)}</strong><span class="${TW.accUserMail}">${esc(u.email)}</span>`;
 }
-/* Destino seguro después de iniciar sesión. Solo acepta páginas del sitio, con o sin parámetros */
+/* Destino seguro después de iniciar sesión. Solo acepta páginas del sitio y las direcciones limpias,
+   con o sin parámetros. Va sin la barra del inicio, así nunca puede ser //otro-sitio.com */
 function safeNext(raw, fallback='perfil.html'){
-  return /^[a-z0-9-]+\.html(\?[a-z0-9=&%._-]*)?$/i.test(raw || '') ? raw : fallback;
+  return /^([a-z0-9-]+\.html|perfumes\/[a-z0-9-]+|ofertas|decants)(\?[a-z0-9=&%._-]*)?$/i.test(raw || '') ? raw : fallback;
 }
-const aquiMismo = () => PAGE + location.search;
+/* La dirección actual para volver después de entrar. En el inicio la ruta es / y queda index.html */
+const aquiMismo = () => (location.pathname.slice(1) || 'index.html') + location.search;
 
 /* ---------- Aviso del corazón sin sesión ----------
    Pequeño, junto al corazón y sin bloquear la pantalla.
@@ -418,7 +438,7 @@ function abrirAvisoFavorito(btn){
   el.className = TW.favPop; el.id = 'aviso-fav';
   el.setAttribute('role','dialog'); el.setAttribute('aria-modal','false'); el.setAttribute('aria-labelledby','aviso-fav-t');
   el.innerHTML = `<p class="${TW.favPopText}" id="aviso-fav-t">Para guardar tus favoritos crea una cuenta. Si ya tienes una, inicia sesión.</p>
-    <div class="${TW.favPopBtns}"><a class="${TW.btnGold}" href="registro.html?next=${next}" data-fav-ir>Crear cuenta</a><a class="${TW.btnOutline}" href="login.html?next=${next}" data-fav-ir>Iniciar sesión</a></div>
+    <div class="${TW.favPopBtns}"><a class="${TW.btnGold}" href="/registro.html?next=${next}" data-fav-ir>Crear cuenta</a><a class="${TW.btnOutline}" href="/login.html?next=${next}" data-fav-ir>Iniciar sesión</a></div>
     <button type="button" class="${TW.favPopX}" data-fav-cerrar aria-label="Cerrar aviso">×</button>`;
   document.body.appendChild(el);
   const r = btn.getBoundingClientRect(), w = el.offsetWidth;
@@ -454,14 +474,14 @@ function aplicarFavoritoPendiente(){
   if(!p || !currentUser() || isFav(id)) return;
   api('PUT', '/api/favoritos/' + encodeURIComponent(id)).then(() => {
     marcarFavorito(id, true);
-    toast(`${p.nombre} se guardó en tus favoritos.`, {link:['Ver favoritos','favoritos.html']});
+    toast(`${p.nombre} se guardó en tus favoritos.`, {link:['Ver favoritos','/favoritos.html']});
   }, err => toast(err.message, {type:'error'}));
 }
 
 /* Las páginas de Mi cuenta piden sesión iniciada */
 function requireLogin(){
   if(currentUser()) return true;
-  location.replace('login.html?next=' + encodeURIComponent(PAGE));
+  location.replace('/login.html?next=' + encodeURIComponent(PAGE));
   return false;
 }
 
@@ -583,9 +603,16 @@ function marcarError(id, msg){
 }));
 
 /* ---------- Navegación activa ---------- */
+/* Una dirección en su forma de comparar, la página y sus parámetros en orden.
+   Así /ofertas y /catalogo.html?oferta=1 cuentan como la misma */
+function mismaRuta(url){
+  const u = new URL(url, location.href), q = paramsDe(u.pathname, u.search);
+  q.sort();
+  return rutaLimpia(u.pathname).pagina + '?' + q;
+}
 function markNav(){
-  const here = PAGE + location.search;
-  $$('#dd-menu a, #mega a, #dd-account a').forEach(a => a.getAttribute('href')===here ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'));
+  const here = mismaRuta(location.href);
+  $$('#dd-menu a, #mega a, #dd-account a').forEach(a => mismaRuta(a.getAttribute('href'))===here ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'));
   /* Perfumes queda marcado en cualquier listado de perfumes */
   if(PAGE==='catalogo.html') $('#btn-perfumes').setAttribute('aria-current','true');
   /* En el menú compacto se abre el grupo de la categoría actual */
@@ -605,14 +632,14 @@ document.addEventListener('click', async e => {
     return;
   }
   if(a==='add-decant'){ if(t.getAttribute('aria-disabled')==='true') return; addToCart(t.dataset.id, 'decant', +t.dataset.ml, 1); return; }
-  if(a==='back'){ history.length>1 ? history.back() : (location.href='index.html'); return; }
+  if(a==='back'){ history.length>1 ? history.back() : (location.href='/index.html'); return; }
   if(a==='focus-field'){ document.getElementById(t.dataset.target)?.focus(); return; }
   if(a==='fav'){
     if(!currentUser()){ abrirAvisoFavorito(t); return; }
     const id = t.dataset.id, p = byId(id), on = !isFav(id);
     /* El corazón cambia enseguida y si el servidor no lo guarda vuelve como estaba */
     marcarFavorito(id, on);
-    toast(on ? `${p.nombre} se guardó en tus favoritos.` : `${p.nombre} se quitó de tus favoritos.`, on ? {link:['Ver favoritos','favoritos.html']} : {});
+    toast(on ? `${p.nombre} se guardó en tus favoritos.` : `${p.nombre} se quitó de tus favoritos.`, on ? {link:['Ver favoritos','/favoritos.html']} : {});
     try{ await api(on ? 'PUT' : 'DELETE', '/api/favoritos/' + encodeURIComponent(id)); }
     catch(err){ marcarFavorito(id, !on); toast(err.message, {type:'error'}); }
     return;
@@ -630,7 +657,7 @@ document.addEventListener('click', async e => {
       try{ await api('POST', '/api/logout'); }
       catch(err){ toast(err.message, {type:'error'}); return; }
       flash('Cerraste sesión correctamente.');
-      location.href = 'index.html';
+      location.href = '/index.html';
     }
   }
 });
@@ -639,7 +666,7 @@ document.addEventListener('click', async e => {
 if(!CATALOGO_CAIDO) $('#sugerencias').innerHTML = [...new Set(PRODUCTS.flatMap(p => [p.nombre, p.marca]))].sort((a,b)=>a.localeCompare(b,'es')).map(v => `<option value="${esc(v)}"></option>`).join('');
 $('#search-form').addEventListener('submit', e => {
   e.preventDefault();
-  location.href = 'buscar.html?q=' + encodeURIComponent($('#q').value.trim());
+  location.href = '/buscar.html?q=' + encodeURIComponent($('#q').value.trim());
 });
 
 /* El encabezado es fijo, así que al moverse con el teclado la página deja

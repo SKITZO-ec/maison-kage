@@ -22,9 +22,9 @@ test('next externo o con código va a perfil', async ({ page }) => {
 
 test('login y registro conservan el destino entre sí', async ({ page }) => {
   await page.goto('login.html?next=' + encodeURIComponent('producto.html?id=asad'));
-  await expect(page.locator('#lg-reg')).toHaveAttribute('href', 'registro.html?next=' + encodeURIComponent('producto.html?id=asad'));
+  await expect(page.locator('#lg-reg')).toHaveAttribute('href', '/registro.html?next=' + encodeURIComponent('producto.html?id=asad'));
   await page.goto('registro.html?next=checkout.html');
-  await expect(page.locator('a[href^="login.html"]').last()).toHaveAttribute('href', 'login.html?next=checkout.html');
+  await expect(page.locator('a[href^="/login.html"]').last()).toHaveAttribute('href', '/login.html?next=checkout.html');
 });
 
 test('aviso del corazón con teclado', async ({ page }) => {

@@ -9,7 +9,7 @@ if(!CATALOGO_CAIDO){
 if(!state.cart.length) $('#app').innerHTML = emptyCartHTML();
 else if(!currentUser()){
   flash('Inicia sesión o crea una cuenta para terminar tu compra. Tu carrito está guardado.');
-  location.replace('login.html?next=checkout.html');
+  location.replace('/login.html?next=checkout.html');
 }
 else renderCheckout();
 
@@ -66,7 +66,7 @@ function renderCheckout(){
         <ul class="${TW.sumItems}">${state.cart.map(l => { const p = byId(l.id); return `<li class="${TW.sumItem}"><span>${l.qty} × ${esc(p.nombre)} · ${l.kind==='decant'?'decant ':''}${l.ml} ml</span><span>${money(unitPrice(l)*l.qty)}</span></li>`; }).join('')}</ul>
         <div id="co-totals" aria-live="polite">${summaryRows(t)}</div>
         <button type="submit" form="co-form" class="${TW.summaryBtnGold}" id="co-submit">Continuar al pago · ${money(t.total)}</button>
-        <a href="carrito.html" class="${TW.summaryBtnOutline}">Volver al carrito</a>
+        <a href="/carrito.html" class="${TW.summaryBtnOutline}">Volver al carrito</a>
       </aside>
     </div>`;
   /* Al cambiar la entrega se muestran u ocultan los campos de dirección y se recalcula el total */
@@ -218,7 +218,7 @@ async function createOrder(data, pago){
   try{
     const o = await api('POST', '/api/pedidos', cuerpo);
     state.cart = []; updateCartBadge();
-    location.href = 'confirmacion.html?n=' + encodeURIComponent(o.num);
+    location.href = '/confirmacion.html?n=' + encodeURIComponent(o.num);
   }catch(err){
     if(modalCtx) modalCtx.bloqueado = false;
     closeModal();

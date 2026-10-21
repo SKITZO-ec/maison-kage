@@ -75,7 +75,7 @@ function filtersHTML(){
 const ctx = catContext();
 document.title = ctx.title + ' | Maison Kage';
 $('#app').innerHTML = `
-  <nav aria-label="Migas de pan"><ol class="${TW.crumbs}"><li class="${TW.crumb}"><a class="underline" href="index.html">Inicio</a></li>${ctx.crumb?`<li class="${TW.crumb}"><a class="underline" href="catalogo.html">Perfumes</a></li><li class="${TW.crumb}" aria-current="page">${esc(ctx.crumb)}</li>`:`<li class="${TW.crumb}" aria-current="page">Perfumes</li>`}</ol></nav>
+  <nav aria-label="Migas de pan"><ol class="${TW.crumbs}"><li class="${TW.crumb}"><a class="underline" href="/index.html">Inicio</a></li>${ctx.crumb?`<li class="${TW.crumb}"><a class="underline" href="/catalogo.html">Perfumes</a></li><li class="${TW.crumb}" aria-current="page">${esc(ctx.crumb)}</li>`:`<li class="${TW.crumb}" aria-current="page">Perfumes</li>`}</ol></nav>
   <header class="${TW.pageHead}"><h1 class="${TW.pageTitle}">${esc(ctx.title)}</h1><p class="${TW.pageHeadP}">${ctx.desc}</p></header>
   <div class="${TW.catalog}">
     <button type="button" class="${TW.fToggle}" id="f-toggle" aria-expanded="false" aria-controls="cat-filters">Mostrar filtros</button>

@@ -73,3 +73,38 @@ test('un nombre con </script> o separadores de línea no rompe el script', async
   assert.doesNotMatch(r.cuerpo, /[\u2028\u2029]/);
   assert.equal(leer(r.cuerpo).usuario.nombre, raro);
 });
+
+/* ---------- URLs limpias ---------- */
+test('/perfumes/<slug> responde la ficha si el perfume existe y está activo', async () => {
+  const r = await cliente(app.base).get('/perfumes/khamrah');
+  assert.equal(r.status, 200);
+  assert.match(r.cabeceras.get('content-type'), /html/);
+  assert.match(r.cuerpo, /js\/paginas\/producto\.js/);
+});
+
+test('/perfumes/<slug> con un perfume que no existe responde 404 con la página 404', async () => {
+  for (const ruta of ['/perfumes/no-existe', '/perfumes/KHAMRAH', '/perfumes/khamrah%3Cx%3E', '/perfumes/khamrah/otra']){
+    const r = await cliente(app.base).get(ruta);
+    assert.equal(r.status, 404, ruta);
+    assert.match(r.cuerpo, /Página no encontrada/, ruta);
+  }
+});
+
+test('/perfumes/<slug> con un perfume inactivo responde 404', async () => {
+  await app.pool.query("UPDATE Producto SET Pro_activo = FALSE WHERE Pro_slug = 'santal-33'");
+  try{
+    const r = await cliente(app.base).get('/perfumes/santal-33');
+    assert.equal(r.status, 404);
+    assert.match(r.cuerpo, /Página no encontrada/);
+  }finally{
+    await app.pool.query("UPDATE Producto SET Pro_activo = TRUE WHERE Pro_slug = 'santal-33'");
+  }
+});
+
+test('/ofertas y /decants responden el catálogo y las direcciones viejas siguen', async () => {
+  for (const ruta of ['/ofertas', '/decants', '/catalogo.html?oferta=1', '/producto.html?id=khamrah']){
+    const r = await cliente(app.base).get(ruta);
+    assert.equal(r.status, 200, ruta);
+    assert.match(r.cuerpo, ruta.includes('producto') ? /js\/paginas\/producto\.js/ : /js\/paginas\/catalogo\.js/, ruta);
+  }
+});
