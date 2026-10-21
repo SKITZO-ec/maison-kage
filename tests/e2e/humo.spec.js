@@ -53,3 +53,46 @@ test('la política de seguridad no bloquea nada y las fotos que faltan se quitan
   expect(csp).toEqual([]);
   expect(page.erroresConsola).toEqual([]);
 });
+
+test.describe('si la base falla', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/js/productos.js', r => r.fulfill({ body: 'const PRODUCTS = null;', contentType: 'text/javascript' }));
+  });
+
+  for (const url of ['index.html', 'catalogo.html', 'producto.html?id=khamrah', 'buscar.html?q=vainilla', 'favoritos.html', 'carrito.html', 'login.html'])
+    test(`${url} muestra el aviso con Reintentar y no da errores`, async ({ page }) => {
+      await page.goto(url);
+      const aviso = page.locator('#app [role="alert"]');
+      await expect(aviso).toContainText('No pudimos cargar los perfumes');
+      await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible();
+      await expect(page.locator('header').first()).toBeVisible();
+      await expect(page.locator('footer').first()).toBeVisible();
+      expect(page.erroresConsola).toEqual([]);
+    });
+
+  test('Reintentar se alcanza con Tab y vuelve a cargar la página', async ({ page }) => {
+    await page.goto('index.html');
+    const boton = page.getByRole('button', { name: 'Reintentar' });
+    await expect(boton).toBeVisible();
+    let enfocado = false;
+    for (let i = 0; i < 40 && !enfocado; i++) {
+      await page.keyboard.press('Tab');
+      enfocado = await boton.evaluate(el => el === document.activeElement);
+    }
+    expect(enfocado).toBe(true);
+    // La base ya responde, el segundo intento deja pasar la petición real
+    await page.unroute('**/js/productos.js');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#home-ofertas a').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reintentar' })).toHaveCount(0);
+    expect(page.erroresConsola).toEqual([]);
+  });
+
+  test('el buscador y el menú del encabezado siguen funcionando', async ({ page }) => {
+    await page.goto('index.html');
+    await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible();
+    await page.locator('#q').fill('oud');
+    await page.locator('#q').press('Enter');
+    await expect(page).toHaveURL(/buscar\.html\?q=oud/);
+  });
+});

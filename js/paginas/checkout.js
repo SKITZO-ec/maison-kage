@@ -3,6 +3,7 @@
    y "Deuna" por un QR dinámico de un agregador (por ejemplo Pagomedios).
    El pedido lo crea el servidor con POST /api/pedidos a partir del carrito guardado
    en la cuenta, y el número llega en la respuesta */
+if(!CATALOGO_CAIDO){
 
 /* Para pagar hace falta una cuenta. El carrito se queda guardado mientras tanto */
 if(!state.cart.length) $('#app').innerHTML = emptyCartHTML();
@@ -225,4 +226,5 @@ async function createOrder(data, pago){
     box.innerHTML = `<h2 class="${TW.errSummaryTitle}">No pudimos crear tu pedido</h2><p class="${TW.errSummaryItem}">${esc(err.message)}</p>`;
     box.hidden = false; box.focus();
   }
+}
 }

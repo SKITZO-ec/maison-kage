@@ -1,6 +1,7 @@
 /* MAISON KAGE · Recuperar contraseña
    Sin código en la dirección se pide el enlace por correo. Con recuperar.html?codigo=...
    se muestra el formulario de la contraseña nueva */
+if(!CATALOGO_CAIDO){
 const codigo = params.get('codigo');
 const pedirOtro = `<a class="${TW.btnText} inline-block mt-[14px]" href="recuperar.html">Pedir un enlace nuevo</a>`;
 
@@ -57,3 +58,4 @@ function pedirClaveNueva(){
 }
 
 codigo ? pedirClaveNueva() : pedirEnlace();
+}

@@ -21,13 +21,18 @@ const enScript = valor => JSON.stringify(valor).replace(/\u2028/g, '\\u2028').re
 export function rutasSitio(pool){
   const router = Router();
 
-  /* Las páginas siguen cargando js/productos.js, ahora se arma desde la base */
-  router.get('/js/productos.js', async (req, res, next) => {
+  /* Las páginas cargan js/productos.js y el archivo no existe en el disco, se arma desde la base.
+     Si la base falla se responde 200 con const PRODUCTS = null; y comun.js muestra el aviso con
+     el botón Reintentar. Un error HTTP aquí dejaría el script sin declarar y la página rota */
+  router.get('/js/productos.js', async (req, res) => {
+    res.type('application/javascript').set('Cache-Control', 'no-store');
     try{
       const lista = await leerProductos(pool);
-      res.type('application/javascript').set('Cache-Control', 'no-store')
-         .send(`/* Catálogo leído de PostgreSQL */\nconst PRODUCTS = ${JSON.stringify(lista)};\n`);
-    }catch(e){ next(e); }
+      res.send(`/* Catálogo leído de PostgreSQL */\nconst PRODUCTS = ${JSON.stringify(lista)};\n`);
+    }catch(e){
+      console.error('No se pudo leer el catálogo', e.message);
+      res.send('const PRODUCTS = null;');
+    }
   });
 
   /* La sesión que leen todas las páginas, con la cuenta, sus favoritos, sus direcciones y su carrito.

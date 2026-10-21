@@ -1,6 +1,7 @@
 /* MAISON KAGE · Mis pedidos
    La lista viene del servidor, del más nuevo al más viejo. Mientras llega se avisa
    y si falla se muestra el mensaje con un botón para volver a pedirla */
+if(!CATALOGO_CAIDO){
 const fechaCorta = iso => new Date(iso).toLocaleDateString('es-EC', {day:'numeric', month:'short', year:'numeric'});
 
 if(requireLogin()){
@@ -37,4 +38,5 @@ if(requireLogin()){
   }
 
   cargar();
+}
 }

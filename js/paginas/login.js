@@ -2,6 +2,7 @@
    El servidor revisa el correo y la contraseña. Si el correo no tiene cuenta
    se muestra el mismo mensaje que con la contraseña equivocada, así no se puede
    saber qué correos están registrados. Para crear una está el enlace de abajo */
+if(!CATALOGO_CAIDO){
 const nextPage = safeNext(params.get('next'));
 if(params.get('next')) $('#lg-reg').href = 'registro.html?next=' + encodeURIComponent(nextPage);
 
@@ -23,3 +24,4 @@ $('#lg-form').addEventListener('submit', async e => {
     [400, 401].includes(err.estado) ? marcarError('lg-pass', err.message) : toast(err.message, {type:'error'});
   }
 });
+}

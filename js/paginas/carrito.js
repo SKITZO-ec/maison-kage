@@ -3,6 +3,7 @@
    en sessionStorage sin sesión o en la cuenta con sesión.
    Quitar un producto es inmediato. En su lugar aparece un aviso con el botón Deshacer,
    que recibe el foco para que también se pueda usar con el teclado */
+if(!CATALOGO_CAIDO){
 let quitado = null;
 function undoHTML(){
   if(!quitado) return '';
@@ -79,3 +80,4 @@ document.addEventListener('mk:carrito', () => {
 });
 
 renderCart();
+}

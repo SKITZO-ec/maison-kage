@@ -2,6 +2,7 @@
    producto.html?id=khamrah                  ficha del frasco completo
    producto.html?id=khamrah&formato=decant   ficha del decant (apartado propio)
    En la ficha de decant cada tamaño se agrega al carrito con un solo clic */
+if(!CATALOGO_CAIDO){
 const p = byId(params.get('id'));
 /* Ficha de decant solo si el perfume tiene decants, y siempre si no tiene frascos */
 const ES_DECANT = !!p && decants(p).length>0 && (params.get('formato') === 'decant' || !frascos(p).length);
@@ -204,3 +205,4 @@ document.addEventListener('click', e => {
     }
   }
 });
+}

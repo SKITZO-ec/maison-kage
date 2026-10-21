@@ -1,6 +1,7 @@
 /* MAISON KAGE · Confirmación del pedido
    El número llega en la dirección (confirmacion.html?n=MK-000001) y el pedido se pide al servidor.
    Sin número, con uno que no tiene forma de pedido o con uno que no es de la cuenta se ve el aviso vacío */
+if(!CATALOGO_CAIDO){
 const numPedido = params.get('n') || '';
 const sinPedido = () => {
   $('#app').innerHTML = `<div class="${TW.empty}"><div class="${TW.emptyIcon}">${ICON.box}</div><h1 class="${TW.emptyTitle}">No hay un pedido reciente</h1><p class="${TW.emptyP}">Cuando confirmes un pago verás aquí el resumen de tu pedido.</p><div class="${TW.emptyBtns}"><a class="${TW.btnGold}" href="catalogo.html">Ver los perfumes</a></div></div>`;
@@ -61,3 +62,4 @@ function pintarPedido(o){
 }
 
 cargarPedido();
+}

@@ -1,5 +1,6 @@
 /* MAISON KAGE · Crear cuenta
    La cuenta se crea en el servidor y queda con la sesión iniciada */
+if(!CATALOGO_CAIDO){
 const nextPage = safeNext(params.get('next'));
 if(params.get('next')) $('#rg-login').href = 'login.html?next=' + encodeURIComponent(nextPage);
 if(params.get('email')) $('#rg-email').value = params.get('email');
@@ -26,3 +27,4 @@ $('#rg-form').addEventListener('submit', async e => {
     [400, 409].includes(err.estado) ? marcarError(campoDelError(err.message), err.message) : toast(err.message, {type:'error'});
   }
 });
+}

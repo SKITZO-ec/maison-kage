@@ -2,6 +2,7 @@
    Datos personales y cambio de contraseña. Cambiar el correo pide la contraseña actual.
    El servidor revisa las contraseñas y guarda los cambios, después la página vuelve a pedir
    los datos para mostrar lo que quedó guardado */
+if(!CATALOGO_CAIDO){
 if(requireLogin()){
   const u = currentUser();
   const pintar = () => {
@@ -57,4 +58,5 @@ if(requireLogin()){
       toast('Contraseña actualizada.');
     });
   });
+}
 }

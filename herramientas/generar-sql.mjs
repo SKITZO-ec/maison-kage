@@ -1,7 +1,7 @@
 /* =========================================================
    MAISON KAGE · Genera database/maisonkage.sql
    El esquema está escrito a mano abajo y los datos de los
-   70 perfumes se toman de js/productos.js para no copiar
+   70 perfumes se toman de herramientas/catalogo.js para no copiar
    nada a mano. Uso   node herramientas/generar-sql.mjs
    ========================================================= */
 import fs from 'node:fs';
@@ -11,7 +11,7 @@ const raiz = new URL('..', import.meta.url).pathname;
 const leer = f => fs.readFileSync(raiz + f, 'utf8');
 const ctx = {};
 vm.createContext(ctx);
-vm.runInContext(leer('js/datos.js').replace(/^const /gm, 'var ') + '\n' + leer('js/productos.js').replace('const PRODUCTS', 'var PRODUCTS'), ctx);
+vm.runInContext(leer('js/datos.js').replace(/^const /gm, 'var ') + '\n' + leer('herramientas/catalogo.js').replace('const PRODUCTS', 'var PRODUCTS'), ctx);
 const { PRODUCTS, FAMILIAS, OCASIONES } = ctx;
 
 const q = s => `'${String(s).replace(/'/g, "''")}'`;

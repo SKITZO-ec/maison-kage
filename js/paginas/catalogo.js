@@ -1,5 +1,6 @@
 /* MAISON KAGE · Perfumes con filtros y orden
    Los enlaces del menú llegan con parámetros, por ejemplo catalogo.html?familia=floral */
+if(!CATALOGO_CAIDO){
 const EJES = ['origen','publico','familia','ocasion','conc'];
 const BANDERAS = {oferta:'Ofertas', novedad:'Novedades', top:'Más vendidos'};
 const emptyFilters = () => ({origen:[], publico:[], familia:[], ocasion:[], conc:[], precio:'', oferta:false, novedad:false, top:false});
@@ -148,3 +149,4 @@ document.addEventListener('click', e => {
   }
 });
 renderResults();
+}

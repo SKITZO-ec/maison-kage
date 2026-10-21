@@ -6,6 +6,9 @@
 /* ---------- Utilidades ---------- */
 const $ = (s, c=document) => c.querySelector(s);
 const $$ = (s, c=document) => [...c.querySelectorAll(s)];
+/* Si la base falló, el servidor entrega const PRODUCTS = null; y esta bandera queda en true.
+   Cada script de página la revisa al empezar para no correr sin catálogo */
+const CATALOGO_CAIDO = PRODUCTS === null;
 const money = n => '$' + n.toFixed(2);
 const byId = id => PRODUCTS.find(p => p.id === id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -633,7 +636,7 @@ document.addEventListener('click', async e => {
 });
 
 /* Buscador de la barra superior con sugerencias de nombres y marcas */
-$('#sugerencias').innerHTML = [...new Set(PRODUCTS.flatMap(p => [p.nombre, p.marca]))].sort((a,b)=>a.localeCompare(b,'es')).map(v => `<option value="${esc(v)}"></option>`).join('');
+if(!CATALOGO_CAIDO) $('#sugerencias').innerHTML = [...new Set(PRODUCTS.flatMap(p => [p.nombre, p.marca]))].sort((a,b)=>a.localeCompare(b,'es')).map(v => `<option value="${esc(v)}"></option>`).join('');
 $('#search-form').addEventListener('submit', e => {
   e.preventDefault();
   location.href = 'buscar.html?q=' + encodeURIComponent($('#q').value.trim());
@@ -654,9 +657,24 @@ function abrirDetallesDelEnlace(){
 }
 addEventListener('hashchange', abrirDetallesDelEnlace);
 
+/* ---------- Aviso cuando el catálogo no carga ----------
+   Reemplaza el contenido de la página y deja el encabezado y el pie funcionando.
+   El botón vuelve a pedir la página completa, que es lo que pide otra vez el catálogo */
+function mostrarErrorCatalogo(){
+  $('#app').innerHTML = `<div class="${TW.empty}" role="alert">
+    <div class="${TW.emptyIcon}">${ICON.help}</div>
+    <h1 class="${TW.emptyTitle}">No pudimos cargar los perfumes</h1>
+    <p class="${TW.emptyP}">La tienda no pudo leer el catálogo en este momento. Intenta de nuevo en unos segundos.</p>
+    <div class="${TW.emptyBtns}"><button type="button" class="${TW.btnGold}" id="reintentar">Reintentar</button></div>
+  </div>`;
+  $('#reintentar').addEventListener('click', () => location.reload());
+  document.title = 'No pudimos cargar los perfumes | Maison Kage';
+}
+
 /* ---------- Inicio común ---------- */
 ajustarEspacioEncabezado();
-limpiarCarrito();
+/* Sin catálogo limpiarCarrito dejaría el carrito vacío y lo guardaría así, por eso no corre */
+if(CATALOGO_CAIDO) mostrarErrorCatalogo(); else limpiarCarrito();
 renderAccountMenu();
 renderAccUser();
 updateCartBadge();

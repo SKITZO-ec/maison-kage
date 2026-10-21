@@ -1,6 +1,7 @@
 /* MAISON KAGE · Direcciones de envío
    La lista vive en el servidor. Después de cada cambio la página vuelve a pedirla y la dibuja,
    y deja la misma lista en SESION para que checkout la vea sin recargar */
+if(!CATALOGO_CAIDO){
 if(requireLogin()){
   const u = currentUser();
   const btn = $('#ad-toggle'), form = $('#ad-form'), caja = $('#addr-list');
@@ -90,4 +91,5 @@ if(requireLogin()){
     }
   });
   cargar(true);
+}
 }

@@ -1,4 +1,5 @@
 /* MAISON KAGE · Resultados de búsqueda (buscar.html?q=texto) */
+if(!CATALOGO_CAIDO){
 function searchProducts(q){
   const terms = norm(q).split(/\s+/).filter(Boolean);
   return PRODUCTS.filter(p => {
@@ -28,3 +29,4 @@ if(!q){
   body = `<div class="${TW.toolbar}"><p class="${TW.count}" role="status">${res.length} ${res.length===1?'resultado':'resultados'} para “${esc(q)}”</p><a href="catalogo.html" class="${TW.linkSmall}">Refinar con filtros</a></div><div class="${TW.grid}">${res.map(card).join('')}</div>`;
 }
 $('#search-body').innerHTML = body;
+}

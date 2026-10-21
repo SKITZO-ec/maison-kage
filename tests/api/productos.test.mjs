@@ -1,6 +1,8 @@
 /* Pruebas de la API del catálogo y de lo que el servidor publica */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { iniciarApp, cliente } from './ayuda.mjs';
 
 let app, api;
@@ -62,5 +64,33 @@ test('si la base no responde, la API da un 503 sin detalles internos', async () 
     const texto = JSON.stringify(cuerpo);
     assert.ok(!texto.includes('postgres'));
     assert.ok(!texto.includes('at '));
+  } finally { await sinBd.cerrar(); }
+});
+
+/* El catálogo de origen ya no vive en el código que publica el sitio */
+const raiz = path.resolve(import.meta.dirname, '..', '..');
+
+test('el catálogo de origen está en herramientas y no en js', async () => {
+  assert.equal(fs.existsSync(path.join(raiz, 'js', 'productos.js')), false);
+  assert.equal(fs.existsSync(path.join(raiz, 'herramientas', 'catalogo.js')), true);
+});
+
+test('GET /js/productos.js sigue dando un script con los 70 perfumes leídos de la base', async () => {
+  const { status, cuerpo, cabeceras } = await api.get('/js/productos.js');
+  assert.equal(status, 200);
+  assert.match(cabeceras.get('content-type'), /javascript/);
+  assert.match(cuerpo, /^\/\* Catálogo leído de PostgreSQL \*\/\nconst PRODUCTS = \[/);
+  const lista = JSON.parse(cuerpo.slice(cuerpo.indexOf('['), cuerpo.lastIndexOf(']') + 1));
+  assert.equal(lista.length, 70);
+});
+
+test('si la base no responde, /js/productos.js da 200 con const PRODUCTS = null;', async () => {
+  const sinBd = await iniciarApp({ bd: { database: 'no_existe_mk' } });
+  try {
+    const { status, cuerpo, cabeceras } = await cliente(sinBd.base).get('/js/productos.js');
+    assert.equal(status, 200);
+    assert.match(cabeceras.get('content-type'), /javascript/);
+    assert.equal(cabeceras.get('cache-control'), 'no-store');
+    assert.equal(cuerpo, 'const PRODUCTS = null;');
   } finally { await sinBd.cerrar(); }
 });

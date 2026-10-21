@@ -1,4 +1,5 @@
 /* MAISON KAGE · Favoritos */
+if(!CATALOGO_CAIDO){
 function renderFavs(){
   const favs = PRODUCTS.filter(p => isFav(p.id));
   $('#favs').innerHTML = favs.length
@@ -8,4 +9,5 @@ function renderFavs(){
 if(requireLogin()){
   renderFavs();
   document.addEventListener('mk:favs', () => { renderFavs(); $('#acc-content h1').focus(); });
+}
 }
