@@ -141,6 +141,7 @@ test('cerrar sesión desde el menú y recargar deja la cuenta sin sesión', asyn
   await expect(page.locator('#dd-account')).toContainText('Hola, Ana');
   await page.click('#btn-account');
   await page.locator('#dd-account').getByRole('button', { name: 'Cerrar sesión' }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('Tu carrito queda guardado en tu cuenta. Para ver tus pedidos tendrás que volver a ingresar.');
   await page.getByRole('alertdialog').getByRole('button', { name: 'Cerrar sesión' }).click();
   await expect(page.locator('#toast-region')).toContainText('Cerraste sesión correctamente.');
   await page.reload();

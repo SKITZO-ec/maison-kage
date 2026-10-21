@@ -169,3 +169,16 @@ test('si otro cliente compró la última unidad el checkout avisa y no navega', 
   await expect(page).toHaveURL(/\/checkout\.html$/);
   expect(await pedidosGuardados(page)).toEqual([]);
 });
+
+test('volver a iniciar sesión con la sesión abierta no duplica el carrito de la cuenta', async ({ page }) => {
+  const { correo, clave } = await cuentaNueva(page);
+  await carritoCon(page, [['asad', 'decant', 5, 2]]);
+  await page.goto('login.html');
+  expect(await page.evaluate(() => state.cart.map(l => [l.id, l.qty]))).toEqual([['asad', 2]]);
+  await page.fill('#lg-email', correo); await page.fill('#lg-pass', clave);
+  await page.click('#lg-form button[type=submit]');
+  await expect(page).toHaveURL(/\/perfil\.html$/);
+  await page.waitForLoadState('load');
+  expect(await carritoGuardado(page)).toEqual([{ id: 'asad', kind: 'decant', ml: 5, qty: 2 }]);
+  await expect(page.locator('#cart-count')).toHaveText('2');
+});

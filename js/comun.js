@@ -200,10 +200,13 @@ function addToCart(id, kind, ml, qty, silent=false){
   return true;
 }
 /* Al iniciar sesión o crear la cuenta, lo que estaba en el carrito sin sesión se suma al de la cuenta.
+   Se leen las líneas de sessionStorage en ese momento y no state.cart, porque con una sesión ya abierta
+   state.cart es el carrito de la cuenta y sumarlo otra vez lo duplicaría o lo pasaría a otra cuenta.
    Si sale bien se borra de la pestaña. Si falla queda en la pestaña y se devuelve el mensaje para avisarlo */
 async function pasarCarritoALaCuenta(){
-  if(!state.cart.length) return null;
-  try{ await api('POST', '/api/carrito/fusionar', {lineas: state.cart}); }
+  const lineas = carritoSinSesion();
+  if(!lineas.length) return null;
+  try{ await api('POST', '/api/carrito/fusionar', {lineas}); }
   catch(err){ return err.message; }
   borrarCarritoSinSesion();
   return null;
@@ -620,7 +623,7 @@ document.addEventListener('click', async e => {
   }
   if(a==='logout'){
     closeAllMenus();
-    if(await confirmDialog('¿Cerrar sesión?', 'Tu carrito se mantiene en este dispositivo. Para ver tus pedidos tendrás que volver a ingresar.', 'Cerrar sesión')){
+    if(await confirmDialog('¿Cerrar sesión?', 'Tu carrito queda guardado en tu cuenta. Para ver tus pedidos tendrás que volver a ingresar.', 'Cerrar sesión')){
       try{ await api('POST', '/api/logout'); }
       catch(err){ toast(err.message, {type:'error'}); return; }
       flash('Cerraste sesión correctamente.');
