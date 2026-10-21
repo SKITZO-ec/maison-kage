@@ -6,7 +6,7 @@
 
 **Architecture:** Express sirve las páginas y la API desde un solo proceso. Las páginas siguen siendo HTML con JavaScript del navegador. Reciben el catálogo y el estado de la sesión como scripts que el servidor arma en cada visita (`js/productos.js` y `js/sesion.js`), y escriben con `fetch` a través de `js/api.js`. Las reglas de dinero, stock y seguridad se deciden en el servidor y en la base.
 
-**Tech Stack:** Node 20 o superior, Express 4, pg, bcryptjs, helmet, express-rate-limit, nodemailer, dotenv. Pruebas con `node --test` para la API y Playwright para el sitio. PostgreSQL 14 o superior.
+**Tech Stack:** Node 20 o superior, Express 5, pg, bcryptjs, helmet, express-rate-limit, nodemailer, dotenv. Pruebas con `node --test` para la API y Playwright para el sitio. PostgreSQL 14 o superior.
 
 **Spec:** `docs/superpowers/specs/2026-10-19-fase-2-backend-design.md`, que continúa `docs/superpowers/specs/2026-10-18-alta-fidelidad-design.md`.
 
